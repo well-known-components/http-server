@@ -4,22 +4,49 @@
 
 ```ts
 
-import * as http from 'http';
-import * as https from 'https';
-import { IConfigComponent } from '@well-known-components/interfaces';
-import { ILoggerComponent } from '@well-known-components/interfaces';
-import { IServerComponent } from '@well-known-components/interfaces';
+import type { CompressionOptions } from 'compression';
+import type { CorsOptions } from 'cors';
+import type * as http from 'http';
+import type * as https from 'https';
+import type { IBaseComponent } from '@well-known-components/interfaces';
+import type { IConfigComponent } from '@well-known-components/interfaces';
+import type { IHttpServerComponent } from '@well-known-components/interfaces';
+import type { ILoggerComponent } from '@well-known-components/interfaces';
+import type { IStatusCheckCapableComponent } from '@well-known-components/interfaces';
 
-// Warning: (ae-forgotten-export) The symbol "ServerComponents" needs to be exported by the entry point index.d.ts
-//
-// @public (undocumented)
-export function createServerComponent(components: ServerComponents): Promise<IServerComponent>;
+// @public
+export function createServerComponent(components: ServerComponents, options: Partial<IHttpServerOptions>): Promise<IHttpServerComponent & IBaseComponent & IStatusCheckCapableComponent>;
+
+// @public
+export function createTestServerComponent(): Promise<IHttpServerComponent>;
 
 // @public (undocumented)
-export function getUnderlyingExpress<T>(server: IServerComponent): Promise<T>;
+export function getUnderlyingExpress<T>(server: IHttpServerComponent): Promise<T>;
 
 // @public (undocumented)
-export function getUnderlyingServer(server: IServerComponent): Promise<http.Server | https.Server>;
+export function getUnderlyingServer(server: IHttpServerComponent): Promise<http.Server | https.Server>;
+
+// @public (undocumented)
+export type IHttpServerOptions = {
+    cors: CorsOptions;
+    compression: CompressionOptions;
+} & ({
+    https: https.ServerOptions;
+} | {
+    http: http.ServerOptions;
+});
+
+// @public (undocumented)
+export type ServerComponents = {
+    config: IConfigComponent;
+    logs: ILoggerComponent;
+};
+
+// @internal (undocumented)
+export function _setUnderlyingExpress<T>(server: IHttpServerComponent, getter: () => Promise<T>): void;
+
+// @internal (undocumented)
+export function _setUnderlyingServer(server: IHttpServerComponent, getter: () => Promise<http.Server | https.Server>): void;
 
 
 // (No @packageDocumentation comment for this package)
