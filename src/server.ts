@@ -2,9 +2,13 @@ import cors from "cors"
 import compression from "compression"
 import express from "express"
 import future from "fp-future"
-import type { IBaseComponent, IHttpServerComponent, IStatusCheckCapableComponent } from "@well-known-components/interfaces"
+import type {
+  IBaseComponent,
+  IHttpServerComponent,
+  IStatusCheckCapableComponent,
+} from "@well-known-components/interfaces"
 import { _setUnderlyingExpress, _setUnderlyingServer } from "./injectors"
-import { getRouteFromExpress, getServer, transformToExpressHandler } from "./logic"
+import { registerExpressRouteHandler, getServer, transformToExpressHandler } from "./logic"
 import type { ServerComponents, IHttpServerOptions } from "./types"
 
 /**
@@ -36,7 +40,7 @@ export async function createServerComponent(
     app.use(compression(options.compression))
   }
 
-  const server = getServer(options)
+  const server = getServer(options, app)
 
   let listen: Promise<typeof server> | undefined
 
@@ -92,7 +96,8 @@ export async function createServerComponent(
       return server.listening
     },
     registerRoute(context, method, path, handler) {
-      return getRouteFromExpress(app, method, path)(transformToExpressHandler<any>(logger, context, handler))
+      const expressHandler = transformToExpressHandler<any>(logger, context, handler)
+      registerExpressRouteHandler(app, method, path, expressHandler)
     },
   }
 

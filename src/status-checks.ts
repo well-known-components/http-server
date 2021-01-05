@@ -25,14 +25,14 @@ export async function createStatusCheckComponent(components: {
    */
   server.registerRoute(context, "GET", "/health/ready", async (ctx, req) => {
     if (!mutStartOptions) {
-      return new Response("initializing", { status: 400 })
+      return { body: "initializing", status: 400 }
     }
     if (mutStartOptions.started()) {
-      return new Response("ready", { status: 200 })
+      return { body: "ready", status: 200 }
     } else if (mutStartOptions.live()) {
-      return new Response("unready", { status: 400 })
+      return { body: "unready", status: 400 }
     }
-    return new Response("waiting", { status: 400 })
+    return { body: "waiting", status: 400 }
   })
 
   /**
@@ -46,8 +46,10 @@ export async function createStatusCheckComponent(components: {
    * result (200) for the startup probe.
    */
   server.registerRoute(context, "GET", "/health/startup", async (ctx, req) => {
-    if (!mutStartOptions || !mutStartOptions.started()) {
-      return new Response("starting", { status: 400 })
+    if (!mutStartOptions) {
+      return { body: "bootstrapping", status: 400 }
+    } else if (!mutStartOptions.started()) {
+      return { body: "starting", status: 400 }
     }
 
     const components: Record<string, IStatusCheckCapableComponent> = mutStartOptions.getComponents()
@@ -69,9 +71,12 @@ export async function createStatusCheckComponent(components: {
 
     const results = await Promise.all(probes.map(($) => $.promise))
 
-    const content = probes.map((content, index) => "[component]" + content.name + results[index]).join("\n")
+    const content = probes.map((content, index) => "[" + content.name + "] " + results[index]).join("\n")
 
-    return new Response(content, { status: results.some(($) => $ == false) ? 400 : 200 })
+    return {
+      status: results.some(($) => $ == false) ? 400 : 200,
+      body: content,
+    }
   })
 
   /**
@@ -80,7 +85,7 @@ export async function createStatusCheckComponent(components: {
    * probe, Kubernetes will kill the pod and restart another.
    */
   server.registerRoute(context, "GET", "/health/live", async (ctx, req) => {
-    return new Response("alive", { status: 200 })
+    return { status: 200, body: "alive" }
   })
 
   return {

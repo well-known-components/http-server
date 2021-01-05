@@ -9,10 +9,10 @@ import type { IHttpServerOptions } from "./types"
 /**
  * @internal
  */
-export function getServer(options: Partial<IHttpServerOptions>): http.Server | https.Server {
-  if ("https" in options && options.https) return https.createServer(options.https)
-  if ("http" in options && options.http) return http.createServer(options.http)
-  return http.createServer()
+export function getServer(options: Partial<IHttpServerOptions>, listener: http.RequestListener): http.Server | https.Server {
+  if ("https" in options && options.https) return https.createServer(options.https, listener)
+  if ("http" in options && options.http) return http.createServer(options.http, listener)
+  return http.createServer(listener)
 }
 
 /**
@@ -58,6 +58,8 @@ export function success(res: ExpressModule.Response) {
         data.body.pipe(res)
       } else if (data.body instanceof Uint8Array) {
         res.send(data.body)
+      } else if (typeof data.body == 'string') {
+        res.send(data.body)
       } else if (data.body != undefined) {
         res.json(data.body)
       }
@@ -67,18 +69,13 @@ export function success(res: ExpressModule.Response) {
   }
 }
 // @internal
-export function getRouteFromExpress(
+export function registerExpressRouteHandler(
   expressApp: any,
   method: string,
-  path: string
-): (handler: ExpressModule.Handler) => any {
-  expressApp.lazyrouter()
-
-  let route = expressApp._router.route(path)
-
-  return (handler) => {
-    route[method.toLowerCase()](handler)
-  }
+  path: string,
+  handler: ExpressModule.Handler
+): void {
+  expressApp[method.toLowerCase()](path, handler)
 }
 
 /**
