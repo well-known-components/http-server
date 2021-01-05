@@ -77,7 +77,7 @@ export function getRouteFromExpress(
   let route = expressApp._router.route(path)
 
   return (handler) => {
-    route[method.toLowerCase()].apply(route, handler)
+    route[method.toLowerCase()](handler)
   }
 }
 
