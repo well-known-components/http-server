@@ -24,7 +24,7 @@ export async function createStatusCheckComponent(components: {
    * associated service's "pool" of pods that are handling requests,
    * by marking the pod as "Unready".
    */
-  server.registerRoute(context, "GET", "/health/ready", async (ctx) => {
+  server.get(context, "/health/ready", async (ctx) => {
     if (!mutStartOptions) {
       return { body: "initializing", status: 400 }
     }
@@ -46,7 +46,7 @@ export async function createStatusCheckComponent(components: {
    * process has finished, you can switch to returning a success
    * result (200) for the startup probe.
    */
-  server.registerRoute(context, "GET", "/health/startup", async (ctx) => {
+  server.get(context, "/health/startup", async (ctx) => {
     if (!mutStartOptions) {
       return { body: "bootstrapping", status: 400 }
     } else if (!mutStartOptions.started()) {
@@ -87,7 +87,7 @@ export async function createStatusCheckComponent(components: {
    * the container is alive or not. If a container fails its liveness
    * probe, Kubernetes will kill the pod and restart another.
    */
-  server.registerRoute(context, "GET", "/health/live", async (ctx) => {
+  server.get(context, "/health/live/:a", async (ctx) => {
     return { status: 200, body: "alive" }
   })
 

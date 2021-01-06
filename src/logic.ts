@@ -72,13 +72,27 @@ export function success(res: ExpressModule.Response) {
   }
 }
 // @internal
-export function registerExpressRouteHandler(
-  expressApp: any,
-  method: string,
+export function registerExpressRouteMethodHandler(
+  expressApp: ExpressModule.Application,
+  method: Lowercase<IHttpServerComponent.HTTPMethod>,
   path: string,
   handler: ExpressModule.Handler
 ): void {
-  expressApp[method.toLowerCase()](path, handler)
+  expressApp[method](path, handler)
+}
+
+// @internal
+export function registerExpressRouteHandler(
+  expressApp: ExpressModule.Application,
+  path: string,
+  handler: ExpressModule.Handler
+): void {
+  expressApp.use(path, handler)
+}
+
+// @internal
+export function registerExpressHandler(expressApp: ExpressModule.Application, handler: ExpressModule.Handler): void {
+  expressApp.use(handler)
 }
 
 /**
@@ -95,17 +109,17 @@ export function failure(req: ExpressModule.Request, res: ExpressModule.Response,
 /**
  * @internal
  */
-export function transformToExpressHandler<Ctx extends object>(
+export function transformToExpressHandler<Ctx extends object, Path extends string>(
   logger: ILoggerComponent.ILogger,
-  context: IHttpServerComponent.DefaultContext<Ctx>,
-  handler: IHttpServerComponent.IRequestHandler<Ctx>
+  context: IHttpServerComponent.DefaultContext<Ctx, Path>,
+  handler: IHttpServerComponent.IRequestHandler<Ctx, Path>
 ) {
   return (req: ExpressModule.Request, res: ExpressModule.Response) => {
     const request = buildRequest(req)
-    const newContext: IHttpServerComponent.DefaultContext<Ctx> = Object.create(context)
+    const newContext: IHttpServerComponent.DefaultContext<Ctx, Path> = Object.create(context)
 
     // hidrate context
-    newContext.params = req.params
+    newContext.params = req.params as any
     newContext.request = request
     newContext.query = req.query
 

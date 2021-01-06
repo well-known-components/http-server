@@ -8,7 +8,13 @@ import type {
   IStatusCheckCapableComponent,
 } from "@well-known-components/interfaces"
 import { _setUnderlyingExpress, _setUnderlyingServer } from "./injectors"
-import { registerExpressRouteHandler, getServer, transformToExpressHandler } from "./logic"
+import {
+  registerExpressRouteMethodHandler,
+  getServer,
+  transformToExpressHandler,
+  registerExpressRouteHandler,
+  registerExpressHandler,
+} from "./logic"
 import type { ServerComponents, IHttpServerOptions } from "./types"
 
 /**
@@ -41,7 +47,7 @@ export async function createServerComponent(
   }
 
   const server = getServer(options, app)
-  app.disable('x-powered-by')
+  app.disable("x-powered-by")
 
   let listen: Promise<typeof server> | undefined
 
@@ -87,18 +93,45 @@ export async function createServerComponent(
     }
   }
 
+  function createMethodHandler(method: Lowercase<IHttpServerComponent.HTTPMethod>) {
+    return <Context, Path extends string = ''>(context: Context, path: Path, handler: IHttpServerComponent.IRequestHandler<Context, Path>) => {
+      const expressHandler = transformToExpressHandler<any, Path>(logger, context as any, handler)
+      registerExpressRouteMethodHandler(app, method, path, expressHandler)
+    }
+  }
+
+  const methodHandlers: IHttpServerComponent.MethodHandlers = {
+    get: createMethodHandler("get"),
+    put: createMethodHandler("put"),
+    delete: createMethodHandler("delete"),
+    connect: createMethodHandler("connect"),
+    options: createMethodHandler("options"),
+    head: createMethodHandler("head"),
+    patch: createMethodHandler("patch"),
+    post: createMethodHandler("post"),
+    trace: createMethodHandler("trace"),
+  }
+
   const ret: IHttpServerComponent & IBaseComponent & IStatusCheckCapableComponent = {
+    // IBaseComponent
     start,
     stop,
+    // IStatusCheckCapableComponent
     async startupProbe() {
       return true
     },
     async readynessProbe() {
       return server.listening
     },
-    registerRoute(context, method, path, handler) {
-      const expressHandler = transformToExpressHandler<any>(logger, context, handler)
-      registerExpressRouteHandler(app, method, path, expressHandler)
+    // IHttpServerComponent
+    ...methodHandlers,
+    route(context, path, handler) {
+      const expressHandler = transformToExpressHandler<any, ''>(logger, context, handler)
+      registerExpressRouteHandler(app, path, expressHandler)
+    },
+    use(context, handler) {
+      const expressHandler = transformToExpressHandler<any, ''>(logger, context, handler)
+      registerExpressHandler(app, expressHandler)
     },
   }
 
