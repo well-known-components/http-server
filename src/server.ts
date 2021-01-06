@@ -21,10 +21,10 @@ import type { ServerComponents, IHttpServerOptions } from "./types"
  * Creates a http-server component
  * @public
  */
-export async function createServerComponent(
+export async function createServerComponent<Context extends object>(
   components: ServerComponents,
   options: Partial<IHttpServerOptions>
-): Promise<IHttpServerComponent & IBaseComponent & IStatusCheckCapableComponent> {
+): Promise<IHttpServerComponent<Context> & IBaseComponent & IStatusCheckCapableComponent> {
   const { config, logs } = components
   const logger = logs.getLogger("http-server")
 
@@ -93,26 +93,28 @@ export async function createServerComponent(
     }
   }
 
-  function createMethodHandler(method: Lowercase<IHttpServerComponent.HTTPMethod>) {
-    return <Context, Path extends string = ''>(context: Context, path: Path, handler: IHttpServerComponent.IRequestHandler<Context, Path>) => {
-      const expressHandler = transformToExpressHandler<any, Path>(logger, context as any, handler)
-      registerExpressRouteMethodHandler(app, method, path, expressHandler)
-    }
-  }
+  let configuredContext: Context = Object.create({})
 
-  const methodHandlers: IHttpServerComponent.MethodHandlers = {
-    get: createMethodHandler("get"),
-    put: createMethodHandler("put"),
-    delete: createMethodHandler("delete"),
-    connect: createMethodHandler("connect"),
-    options: createMethodHandler("options"),
-    head: createMethodHandler("head"),
-    patch: createMethodHandler("patch"),
-    post: createMethodHandler("post"),
-    trace: createMethodHandler("trace"),
-  }
+  // function createMethodHandler(method: Lowercase<IHttpServerComponent.HTTPMethod>) {
+  //   return <Context, Path extends string = ''>(context: Context, path: Path, handler: IHttpServerComponent.IRequestHandler<Context, Path>) => {
+  //     const expressHandler = transformToExpressHandler<any, Path>(logger, context as any, handler)
+  //     registerExpressRouteMethodHandler(app, method, path, expressHandler)
+  //   }
+  // }
 
-  const ret: IHttpServerComponent & IBaseComponent & IStatusCheckCapableComponent = {
+  // const methodHandlers: IHttpServerComponent.MethodHandlers = {
+  //   get: createMethodHandler("get"),
+  //   put: createMethodHandler("put"),
+  //   delete: createMethodHandler("delete"),
+  //   connect: createMethodHandler("connect"),
+  //   options: createMethodHandler("options"),
+  //   head: createMethodHandler("head"),
+  //   patch: createMethodHandler("patch"),
+  //   post: createMethodHandler("post"),
+  //   trace: createMethodHandler("trace"),
+  // }
+
+  const ret: IHttpServerComponent<Context> & IBaseComponent & IStatusCheckCapableComponent = {
     // IBaseComponent
     start,
     stop,
@@ -124,15 +126,13 @@ export async function createServerComponent(
       return server.listening
     },
     // IHttpServerComponent
-    ...methodHandlers,
-    route(context, path, handler) {
-      const expressHandler = transformToExpressHandler<any, ''>(logger, context, handler)
-      registerExpressRouteHandler(app, path, expressHandler)
-    },
-    use(context, handler) {
-      const expressHandler = transformToExpressHandler<any, ''>(logger, context, handler)
+    use(handler) {
+      const expressHandler = transformToExpressHandler<any, ''>(logger, () => configuredContext, handler)
       registerExpressHandler(app, expressHandler)
     },
+    setContext(context){
+      configuredContext = Object.create(context)
+    }
   }
 
   _setUnderlyingServer(ret, async () => {

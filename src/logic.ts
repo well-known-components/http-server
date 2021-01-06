@@ -5,6 +5,8 @@ import * as https from "https"
 import type * as ExpressModule from "express"
 import type { ILoggerComponent, IHttpServerComponent } from "@well-known-components/interfaces"
 import type { IHttpServerOptions } from "./types"
+import { parse as parseUrl } from "url"
+import qs from "qs"
 
 /**
  * @internal
@@ -109,20 +111,30 @@ export function failure(req: ExpressModule.Request, res: ExpressModule.Response,
 /**
  * @internal
  */
+export function contextFromRequest<Ctx extends object>(
+  baseCtx: Ctx,
+  request: IHttpServerComponent.IRequest
+) {
+  const newContext: IHttpServerComponent.DefaultContext<Ctx> = Object.create(baseCtx)
+
+  // hidrate context with the request
+  newContext.request = request
+  newContext.url = parseUrl(request.url, true)
+
+  return newContext
+}
+
+/**
+ * @internal
+ */
 export function transformToExpressHandler<Ctx extends object, Path extends string>(
   logger: ILoggerComponent.ILogger,
-  context: IHttpServerComponent.DefaultContext<Ctx, Path>,
-  handler: IHttpServerComponent.IRequestHandler<Ctx, Path>
+  getContext: () => IHttpServerComponent.DefaultContext<Ctx>,
+  handler: IHttpServerComponent.IRequestHandler<Ctx>
 ) {
   return (req: ExpressModule.Request, res: ExpressModule.Response) => {
     const request = buildRequest(req)
-    const newContext: IHttpServerComponent.DefaultContext<Ctx, Path> = Object.create(context)
-
-    // hidrate context
-    newContext.params = req.params as any
-    newContext.request = request
-    newContext.query = req.query
-
+    const newContext = contextFromRequest(getContext(), request)
     handler(newContext).then(success(res)).catch(failure(req, res, logger))
   }
 }

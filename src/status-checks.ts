@@ -1,4 +1,5 @@
 import { IBaseComponent, IHttpServerComponent, IStatusCheckCapableComponent } from "@well-known-components/interfaces"
+import { Router } from "./router"
 
 /**
  * Binds status checks to the server
@@ -7,13 +8,14 @@ import { IBaseComponent, IHttpServerComponent, IStatusCheckCapableComponent } fr
  *  - GET /health/live - liveness probe
  * @public
  */
-export async function createStatusCheckComponent(components: {
-  server: IHttpServerComponent
+export async function createStatusCheckComponent<Context extends object = {}>(components: {
+  server: IHttpServerComponent<Context>
 }): Promise<IBaseComponent> {
   const { server } = components
-  const context = { components }
 
   let mutStartOptions: IBaseComponent.ComponentStartOptions | undefined
+
+  const routes = new Router()
 
   /**
    * Readiness probes indicate whether your application is ready to
@@ -24,7 +26,7 @@ export async function createStatusCheckComponent(components: {
    * associated service's "pool" of pods that are handling requests,
    * by marking the pod as "Unready".
    */
-  server.get(context, "/health/ready", async (ctx) => {
+  routes.get("/health/ready", async () => {
     if (!mutStartOptions) {
       return { body: "initializing", status: 400 }
     }
@@ -46,7 +48,7 @@ export async function createStatusCheckComponent(components: {
    * process has finished, you can switch to returning a success
    * result (200) for the startup probe.
    */
-  server.get(context, "/health/startup", async (ctx) => {
+  routes.get("/health/startup", async () => {
     if (!mutStartOptions) {
       return { body: "bootstrapping", status: 400 }
     } else if (!mutStartOptions.started()) {
@@ -87,9 +89,11 @@ export async function createStatusCheckComponent(components: {
    * the container is alive or not. If a container fails its liveness
    * probe, Kubernetes will kill the pod and restart another.
    */
-  server.get(context, "/health/live/:a", async (ctx) => {
+  routes.get("/health/live", async () => {
     return { status: 200, body: "alive" }
   })
+
+  server.use(routes.routes())
 
   return {
     async start(opt) {
