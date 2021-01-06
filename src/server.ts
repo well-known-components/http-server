@@ -41,6 +41,7 @@ export async function createServerComponent(
   }
 
   const server = getServer(options, app)
+  app.disable('x-powered-by')
 
   let listen: Promise<typeof server> | undefined
 

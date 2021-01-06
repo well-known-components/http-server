@@ -9,7 +9,10 @@ import type { IHttpServerOptions } from "./types"
 /**
  * @internal
  */
-export function getServer(options: Partial<IHttpServerOptions>, listener: http.RequestListener): http.Server | https.Server {
+export function getServer(
+  options: Partial<IHttpServerOptions>,
+  listener: http.RequestListener
+): http.Server | https.Server {
   if ("https" in options && options.https) return https.createServer(options.https, listener)
   if ("http" in options && options.http) return http.createServer(options.http, listener)
   return http.createServer(listener)
@@ -58,7 +61,7 @@ export function success(res: ExpressModule.Response) {
         data.body.pipe(res)
       } else if (data.body instanceof Uint8Array) {
         res.send(data.body)
-      } else if (typeof data.body == 'string') {
+      } else if (typeof data.body == "string") {
         res.send(data.body)
       } else if (data.body != undefined) {
         res.json(data.body)
@@ -94,14 +97,18 @@ export function failure(req: ExpressModule.Request, res: ExpressModule.Response,
  */
 export function transformToExpressHandler<Ctx extends object>(
   logger: ILoggerComponent.ILogger,
-  context: Ctx,
+  context: IHttpServerComponent.DefaultContext<Ctx>,
   handler: IHttpServerComponent.IRequestHandler<Ctx>
 ) {
   return (req: ExpressModule.Request, res: ExpressModule.Response) => {
     const request = buildRequest(req)
-    const newContext: Ctx & { params: Record<any, any> } = Object.create(context)
+    const newContext: IHttpServerComponent.DefaultContext<Ctx> = Object.create(context)
+
+    // hidrate context
     newContext.params = req.params
-    req.query
-    handler(newContext, request).then(success(res)).catch(failure(req, res, logger))
+    newContext.request = request
+    newContext.query = req.query
+
+    handler(newContext).then(success(res)).catch(failure(req, res, logger))
   }
 }

@@ -8,14 +8,19 @@ import type { CompressionOptions } from 'compression';
 import type { CorsOptions } from 'cors';
 import type * as http from 'http';
 import type * as https from 'https';
-import type { IBaseComponent } from '@well-known-components/interfaces';
+import { IBaseComponent } from '@well-known-components/interfaces';
 import type { IConfigComponent } from '@well-known-components/interfaces';
-import type { IHttpServerComponent } from '@well-known-components/interfaces';
+import { IHttpServerComponent } from '@well-known-components/interfaces';
 import type { ILoggerComponent } from '@well-known-components/interfaces';
 import type { IStatusCheckCapableComponent } from '@well-known-components/interfaces';
 
 // @public
 export function createServerComponent(components: ServerComponents, options: Partial<IHttpServerOptions>): Promise<IHttpServerComponent & IBaseComponent & IStatusCheckCapableComponent>;
+
+// @public
+export function createStatusCheckComponent(components: {
+    server: IHttpServerComponent;
+}): Promise<IBaseComponent>;
 
 // @public
 export function createTestServerComponent(): Promise<IHttpServerComponent>;
