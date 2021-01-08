@@ -9,10 +9,8 @@ import type {
 } from "@well-known-components/interfaces"
 import { _setUnderlyingExpress, _setUnderlyingServer } from "./injectors"
 import {
-  registerExpressRouteMethodHandler,
   getServer,
   transformToExpressHandler,
-  registerExpressRouteHandler,
   registerExpressHandler,
 } from "./logic"
 import type { ServerComponents, IHttpServerOptions } from "./types"

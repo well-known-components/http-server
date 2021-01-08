@@ -26,7 +26,7 @@ export async function createStatusCheckComponent<Context extends object = {}>(co
    * associated service's "pool" of pods that are handling requests,
    * by marking the pod as "Unready".
    */
-  routes.get("/health/ready", async () => {
+  routes.get("/health/ready", async (ctx) => {
     if (!mutStartOptions) {
       return { body: "initializing", status: 400 }
     }
@@ -46,7 +46,7 @@ export async function createStatusCheckComponent<Context extends object = {}>(co
    * app should either not respond to requests, or if it does, it
    * should return a status code of 400 or higher. Once the startup
    * process has finished, you can switch to returning a success
-   * result (200) for the startup probe.
+   * res (200) for the startup probe.
    */
   routes.get("/health/startup", async () => {
     if (!mutStartOptions) {
@@ -93,7 +93,8 @@ export async function createStatusCheckComponent<Context extends object = {}>(co
     return { status: 200, body: "alive" }
   })
 
-  server.use(routes.routes())
+  const middleware = routes.routes()
+  server.use(middleware)
 
   return {
     async start(opt) {

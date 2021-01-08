@@ -1,6 +1,6 @@
 export * from './server'
 export * from './injectors'
-export * from './test'
+export * from './test-component'
 export * from './types'
 export * from './status-checks'
 export * from './helpers'

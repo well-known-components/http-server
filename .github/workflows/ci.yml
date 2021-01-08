@@ -14,8 +14,12 @@ jobs:
           node-version: 14.x
       - name: install
         run:  npm install
-      - name: make
+      - name: build
         run:  make build
+      - name: test
+        run:  make test
+        # TODO: once tests pass, remove the following ling
+        continue-on-error: true
       - name: Publish
         uses: menduz/oddish-action@master
         with:

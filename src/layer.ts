@@ -15,13 +15,13 @@ export type LayerOptions = Partial<{
 /**
  * Initialize a new routing Layer with given `method`, `path`, and `middleware`.
  *
- * @param {String|RegExp} path Path string or regular expression.
- * @param {Array} methods Array of HTTP verbs.
- * @param {Array} middleware Layer callback/middleware or series of.
- * @param {Object=} opts
- * @param {String=} opts.name route name
- * @param {String=} opts.sensitive case sensitive (default: false)
- * @param {String=} opts.strict require the trailing slash (default: false)
+ * @param path - Path string or regular expression.
+ * @param methods - Array of HTTP verbs.
+ * @param middleware - Layer callback/middleware or series of.
+ * @param opts -
+ * @param opts.name - route name
+ * @param opts.sensitive - case sensitive (default: false)
+ * @param opts.strict - require the trailing slash (default: false)
  *
  * @public
  */
@@ -68,9 +68,7 @@ export class Layer<Context> {
   /**
    * Returns whether request `path` matches route.
    *
-   * @param {String} path
-   * @returns {Boolean}
-   * @private
+   * @param path -
    */
 
   match(path: string): boolean {
@@ -80,11 +78,9 @@ export class Layer<Context> {
   /**
    * Returns map of URL parameters for given `path` and `paramNames`.
    *
-   * @param {String} path
-   * @param {Array.<String>} captures
-   * @param {Object=} existingParams
-   * @returns {Object}
-   * @private
+   * @param path -
+   * @param captures -
+   * @param existingParams -
    */
 
   params(captures: Array<string>, existingParams: Record<string, string>): object {
@@ -103,9 +99,7 @@ export class Layer<Context> {
   /**
    * Returns array of regexp url path captures.
    *
-   * @param {String} path
-   * @returns {Array.<String>}
-   * @private
+   * @param path -
    */
 
   captures(path: string): Array<string> {
@@ -117,7 +111,7 @@ export class Layer<Context> {
   /**
    * Prefix route path.
    *
-   * @param {String} prefix
+   * @param prefix -
    */
 
   setPrefix(prefix: string): this {
@@ -135,9 +129,7 @@ export class Layer<Context> {
  * Safe decodeURIComponent, won't throw any error.
  * If `decodeURIComponent` error happen, just return the original value.
  *
- * @param {String} text
- * @returns {String} URL decode original string.
- * @private
+ * @param text -
  */
 
 function safeDecodeURIComponent(text: string): string {

@@ -111,10 +111,7 @@ export function failure(req: ExpressModule.Request, res: ExpressModule.Response,
 /**
  * @internal
  */
-export function contextFromRequest<Ctx extends object>(
-  baseCtx: Ctx,
-  request: IHttpServerComponent.IRequest
-) {
+export function contextFromRequest<Ctx extends object>(baseCtx: Ctx, request: IHttpServerComponent.IRequest) {
   const newContext: IHttpServerComponent.DefaultContext<Ctx> = Object.create(baseCtx)
 
   // hidrate context with the request
@@ -135,6 +132,8 @@ export function transformToExpressHandler<Ctx extends object, Path extends strin
   return (req: ExpressModule.Request, res: ExpressModule.Response) => {
     const request = buildRequest(req)
     const newContext = contextFromRequest(getContext(), request)
-    handler(newContext).then(success(res)).catch(failure(req, res, logger))
+    handler(newContext, async () => ({}))
+      .then(success(res))
+      .catch(failure(req, res, logger))
   }
 }

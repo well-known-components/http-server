@@ -8,7 +8,7 @@ const underlyingExpressKey = Symbol("real-express")
 /**
  * @public
  */
-export async function getUnderlyingServer(server: IHttpServerComponent): Promise<http.Server | https.Server> {
+export async function getUnderlyingServer(server: IHttpServerComponent<any>): Promise<http.Server | https.Server> {
   const getListener: () => Promise<http.Server | https.Server> = (server as any)[underlyingServerKey]
   if (!getListener)
     throw new Error("The provided server does not have an underlying http or https server implementation")
@@ -18,14 +18,17 @@ export async function getUnderlyingServer(server: IHttpServerComponent): Promise
 /**
  * @internal
  */
-export function _setUnderlyingServer(server: IHttpServerComponent, getter: () => Promise<http.Server | https.Server>) {
+export function _setUnderlyingServer(
+  server: IHttpServerComponent<any>,
+  getter: () => Promise<http.Server | https.Server>
+) {
   ;(server as any)[underlyingServerKey] = getter
 }
 
 /**
  * @public
  */
-export async function getUnderlyingExpress<T>(server: IHttpServerComponent): Promise<T> {
+export async function getUnderlyingExpress<T>(server: IHttpServerComponent<any>): Promise<T> {
   const getListener: () => Promise<T> = (server as any)[underlyingExpressKey]
   if (!getListener)
     throw new Error("The provided server does not have an underlying http or https server implementation")
@@ -35,6 +38,6 @@ export async function getUnderlyingExpress<T>(server: IHttpServerComponent): Pro
 /**
  * @internal
  */
-export function _setUnderlyingExpress<T>(server: IHttpServerComponent, getter: () => Promise<T>) {
+export function _setUnderlyingExpress<T>(server: IHttpServerComponent<any>, getter: () => Promise<T>) {
   ;(server as any)[underlyingExpressKey] = getter
 }

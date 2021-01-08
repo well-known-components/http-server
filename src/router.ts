@@ -1,35 +1,44 @@
 import HttpError from "http-errors"
 import { Layer, LayerOptions } from "./layer"
 import { Key, pathToRegexp } from "path-to-regexp"
-import { IHttpServerComponent as http } from "@well-known-components/interfaces"
+import type { IHttpServerComponent, IMiddlewareAdapterHandler } from "@well-known-components/interfaces"
 import { compose, Middleware } from "./middleware"
 import { methodsList } from "./methods"
 
+/** @public */
 export type RouterOptions = Partial<{
-  methods: http.HTTPMethod[]
+  methods: IHttpServerComponent.HTTPMethod[]
   prefix: string
   routerPath: string
   sensitive: boolean
   strict: boolean
 }>
+/** @public */
 export type AllowedMethodOptions = Partial<{
+  /// throw error instead of setting status and header
   throw: boolean
+  /// throw the returned value in place of the default NotImplemented error
   notImplemented: NewableFunction
+  /// throw the returned value in place of the default MethodNotAllowed error
   methodNotAllowed: NewableFunction
 }>
 
 const injectedMiddlewareRouterSymbol = Symbol("injected-router")
 
-export function getInjectedRouter<C>(middleware: Middleware<C>): Router<C> | null {
+/** @internal */
+function getInjectedRouter<C>(middleware: Middleware<C>): Router<C> | null {
   return (middleware as any)[injectedMiddlewareRouterSymbol] || null
 }
-export function setInjectedRouter<C>(middleware: Middleware<C>, router: Router<any>) {
+
+/** @internal */
+function setInjectedRouter<C>(middleware: Middleware<C>, router: Router<any>) {
   ;(middleware as any)[injectedMiddlewareRouterSymbol] = router
 }
 
-export type RoutedContext<Context, Path extends string> = http.PathAwareContext<Context, Path> & {
+/** @public */
+export type RoutedContext<Context, Path extends string> = IHttpServerComponent.PathAwareContext<Context, Path> & {
   // TODO: move to HTTP
-  method: http.HTTPMethod
+  method: IHttpServerComponent.HTTPMethod
   path: string
   // --
 
@@ -47,9 +56,18 @@ export type RoutedContext<Context, Path extends string> = http.PathAwareContext<
   routerPath?: string
 }
 
-function createMethodHandler(router: Router<any>, method: http.HTTPMethod): http.PathAwareHandler<any> {
-  return function (path, middleware: Middleware<any>) {
-    router.register(path, [method], middleware, {})
+/** @public */
+export type RoutePathSignature<Context> = <T extends string>(
+  path: T,
+  middleware: IHttpServerComponent.IRequestHandler<RoutedContext<Context, T>>
+) => void
+
+function createMethodHandler<Context>(
+  router: Router<Context>,
+  method: IHttpServerComponent.HTTPMethod
+): RoutePathSignature<Context> {
+  return function (path, middleware) {
+    router.register(path, [method], middleware as IHttpServerComponent.IRequestHandler<Context>, {})
   }
 }
 
@@ -64,7 +82,7 @@ function createMethodHandler(router: Router<any>, method: http.HTTPMethod): http
  * const Koa = require('koa');
  * const Router = require('@koa/router');
  *
- * const app = new Koa();
+ * const app = createTestServerComponent();
  * const router = new Router();
  *
  * router.get('/', (ctx, next) => {
@@ -75,16 +93,12 @@ function createMethodHandler(router: Router<any>, method: http.HTTPMethod): http
  *   .use(router.routes())
  *   .use(router.allowedMethods());
  * ```
- *
- * @alias module:koa-router
- * @param {Object=} opts
- * @param {String=} opts.prefix prefix router paths
- * @constructor
+ * @public
  */
 
-export class Router<Context> implements http.MethodHandlers<Context> {
+export class Router<Context extends {}> implements IHttpServerComponent.MethodHandlers<Context> {
   opts: RouterOptions
-  methods: http.HTTPMethod[]
+  methods: IHttpServerComponent.HTTPMethod[]
   // params: Record<string, Middleware<http.DefaultContext<Context>>> = {}
   stack: Layer<Context>[] = []
   constructor(opts?: RouterOptions) {
@@ -92,15 +106,15 @@ export class Router<Context> implements http.MethodHandlers<Context> {
     this.methods = this.opts.methods || ["HEAD", "OPTIONS", "GET", "PUT", "PATCH", "POST", "DELETE"]
   }
 
-  connect = createMethodHandler(this, "CONNECT")
-  delete = createMethodHandler(this, "DELETE")
-  get = createMethodHandler(this, "GET")
-  head = createMethodHandler(this, "HEAD")
-  options = createMethodHandler(this, "OPTIONS")
-  patch = createMethodHandler(this, "PATCH")
-  post = createMethodHandler(this, "POST")
-  put = createMethodHandler(this, "PUT")
-  trace = createMethodHandler(this, "TRACE")
+  connect = createMethodHandler<Context>(this, "CONNECT")
+  delete = createMethodHandler<Context>(this, "DELETE")
+  get = createMethodHandler<Context>(this, "GET")
+  head = createMethodHandler<Context>(this, "HEAD")
+  options = createMethodHandler<Context>(this, "OPTIONS")
+  patch = createMethodHandler<Context>(this, "PATCH")
+  post = createMethodHandler<Context>(this, "POST")
+  put = createMethodHandler<Context>(this, "PUT")
+  trace = createMethodHandler<Context>(this, "TRACE")
 
   /**
    * Use given middleware.
@@ -126,14 +140,12 @@ export class Router<Context> implements http.MethodHandlers<Context> {
    * app.use(router.routes());
    * ```
    *
-   * @param {String=} path
-   * @param {Function} middleware
-   * @param {Function=} ...
-   * @returns {Router}
+   * @param path -
+   * @param middleware -
    */
 
-  use(...middlewares: Middleware<Context>[]): this
-  use<P extends string>(route: P, ...middlewares: Middleware<Context>[]): this
+  use(...middlewares: IHttpServerComponent.IRequestHandler<RoutedContext<Context, string>>[]): this
+  use<P extends string>(route: P, ...middlewares: IHttpServerComponent.IRequestHandler<RoutedContext<Context, P>>[]): this
   use(): this {
     const middleware: Middleware<Context>[] = Array.prototype.slice.call(arguments)
     let path: string | undefined
@@ -179,8 +191,7 @@ export class Router<Context> implements http.MethodHandlers<Context> {
    * router.prefix('/things/:thing_id')
    * ```
    *
-   * @param {String} prefix
-   * @returns {Router}
+   * @param prefix -
    */
 
   prefix(prefix: string): this {
@@ -199,21 +210,19 @@ export class Router<Context> implements http.MethodHandlers<Context> {
   /**
    * Returns router middleware which dispatches a route matching the request.
    *
-   * @returns {Function}
    */
 
-  routes(): Middleware<RoutedContext<http.DefaultContext<Context>, string>> {
+  routes(): IHttpServerComponent.IRequestHandler<Context> {
     const router = this
 
-    let dispatch = function dispatch(
-      ctx: RoutedContext<http.DefaultContext<Context>, string>,
-      next: () => Promise<http.IResponse>
-    ) {
+    const routerMiddleware: IHttpServerComponent.IRequestHandler<
+      RoutedContext<Context, any>
+    > = function routerMiddleware(ctx, next) {
       // debug("%s %s", ctx.method, ctx.path)
 
       const path = router.opts.routerPath || ctx.routerPath || ctx.path
       const matched = router.match(path, ctx.method)
-      let layerChain: Middleware<RoutedContext<http.DefaultContext<Context>, string>>[]
+      let layerChain: Middleware<RoutedContext<IHttpServerComponent.DefaultContext<Context>, string>>[]
 
       if (ctx.matched) {
         ctx.matched.push.apply(ctx.matched, matched.path)
@@ -250,9 +259,9 @@ export class Router<Context> implements http.MethodHandlers<Context> {
       return compose(...layerChain)(ctx, next)
     }
 
-    setInjectedRouter(dispatch, this)
+    setInjectedRouter(routerMiddleware, this)
 
-    return dispatch
+    return routerMiddleware as IHttpServerComponent.IRequestHandler<Context>
   }
 
   /**
@@ -266,7 +275,7 @@ export class Router<Context> implements http.MethodHandlers<Context> {
    * const Koa = require('koa');
    * const Router = require('@koa/router');
    *
-   * const app = new Koa();
+   * const app = createTestServerComponent();
    * const router = new Router();
    *
    * app.use(router.routes());
@@ -280,7 +289,7 @@ export class Router<Context> implements http.MethodHandlers<Context> {
    * const Router = require('@koa/router');
    * const Boom = require('boom');
    *
-   * const app = new Koa();
+   * const app = createTestServerComponent();
    * const router = new Router();
    *
    * app.use(router.routes());
@@ -291,21 +300,16 @@ export class Router<Context> implements http.MethodHandlers<Context> {
    * }));
    * ```
    *
-   * @param {Object=} options
-   * @param {Boolean=} options.throw throw error instead of setting status and header
-   * @param {Function=} options.notImplemented throw the returned value in place of the default NotImplemented error
-   * @param {Function=} options.methodNotAllowed throw the returned value in place of the default MethodNotAllowed error
-   * @returns {Function}
+   * @param options -
    */
 
-  allowedMethods(options: AllowedMethodOptions = {}): Function {
+  allowedMethods(options: AllowedMethodOptions = {}): IHttpServerComponent.IRequestHandler<Context> {
     options = options || {}
     const implemented = this.methods
 
-    return async function allowedMethods(
-      ctx: RoutedContext<http.DefaultContext<Context>, string>,
-      next: () => Promise<http.IResponse>
-    ) {
+    const routerMiddleware: IHttpServerComponent.IRequestHandler<
+      RoutedContext<Context, any>
+    > = async function routerMiddleware(ctx, next) {
       const response = await next()
 
       const allowed: Partial<Record<string, string>> = {}
@@ -341,7 +345,6 @@ export class Router<Context> implements http.MethodHandlers<Context> {
           if (ctx.method === "OPTIONS") {
             return {
               status: 200,
-              body: "",
               headers: { Allow: allowedArr.join(", ") },
             }
           } else if (!allowed[ctx.method]) {
@@ -362,17 +365,16 @@ export class Router<Context> implements http.MethodHandlers<Context> {
         }
       }
     }
+    return routerMiddleware
   }
 
   /**
    * Register route with all methods.
    *
-   * @param {String} name Optional.
-   * @param {String} path
-   * @param {Function=} middleware You may also pass multiple middleware.
-   * @param {Function} callback
-   * @returns {Router}
-   * @private
+   * @param name - Optional.
+   * @param path -
+   * @param middleware - You may also pass multiple middleware.
+   * @param callback -
    */
 
   all(path: string, middleware: Middleware<Context>): this {
@@ -399,10 +401,9 @@ export class Router<Context> implements http.MethodHandlers<Context> {
    * });
    * ```
    *
-   * @param {String} source URL or route name.
-   * @param {String} destination URL or route name.
-   * @param {Number=} code HTTP status code (default: 301).
-   * @returns {Router}
+   * @param source - URL or route name.
+   * @param destination - URL or route name.
+   * @param code - HTTP status code (default: 301).
    */
 
   redirect(source: string, destination: string, code?: number): this {
@@ -423,17 +424,15 @@ export class Router<Context> implements http.MethodHandlers<Context> {
   /**
    * Create and register a route.
    *
-   * @param {String} path Path string.
-   * @param {Array.<String>} methods Array of HTTP verbs.
-   * @param {Function} middleware Multiple middleware also accepted.
-   * @returns {Router}
-   * @private
+   * @param path - Path string.
+   * @param methods - Array of HTTP verbs.
+   * @param middleware - Multiple middleware also accepted.
    */
 
   register(
     path: string,
-    methods: ReadonlyArray<http.HTTPMethod>,
-    middleware: Middleware<Context>,
+    methods: ReadonlyArray<IHttpServerComponent.HTTPMethod>,
+    middleware: IHttpServerComponent.IRequestHandler<Context>,
     opts?: LayerOptions
   ): Layer<Context> {
     opts = opts || {}
@@ -473,8 +472,7 @@ export class Router<Context> implements http.MethodHandlers<Context> {
   /**
    * Lookup route with given `name`.
    *
-   * @param {String} name
-   * @returns {Layer|null}
+   * @param name -
    */
 
   route(name: string): Layer<Context> | null {
@@ -490,14 +488,11 @@ export class Router<Context> implements http.MethodHandlers<Context> {
   /**
    * Match given `path` and return corresponding routes.
    *
-   * @param {String} path
-   * @param {String} method
-   * @returns {Object.<path, pathAndMethod>} returns layers that matched path and
-   * path and method.
-   * @private
+   * @param path -
+   * @param method -
    */
 
-  match(path: string, method: http.HTTPMethod) {
+  match(path: string, method: IHttpServerComponent.HTTPMethod) {
     const layers = this.stack
     let layer: Layer<Context>
 
@@ -536,9 +531,8 @@ export class Router<Context> implements http.MethodHandlers<Context> {
 //  * // => "/users/1"
 //  * ```
 //  *
-//  * @param {String} path url pattern
-//  * @param {Object} params url parameters
-//  * @returns {String}
+//  * @param path - url pattern
+//  * @param params - url parameters
 //  */
 // export function processUrl(path: string, ...rest: any[]): string {
 //   return Layer.prototype.url.apply({ path }, rest)
@@ -556,7 +550,7 @@ export class Router<Context> implements http.MethodHandlers<Context> {
 //  * ```javascript
 //  * router
 //  *   .get('/', (ctx, next) => {
-//  *     ctx.body = 'Hello World!';
+//  *     return ctx.body = 'Hello World!';
 //  *   })
 //  *   .post('/users', (ctx, next) => {
 //  *     // ...
@@ -659,10 +653,9 @@ export class Router<Context> implements http.MethodHandlers<Context> {
 //  *
 //  * @name get|put|post|patch|delete|del
 //  * @memberof module:koa-router.prototype
-//  * @param {String} path
-//  * @param {Function=} middleware route middleware(s)
-//  * @param {Function} callback route callback
-//  * @returns {Router}
+//  * @param path -
+//  * @param middleware - route middleware(s)
+//  * @param callback - route callback
 //  */
 
 // for (let i = 0; i < methods.length; i++) {
