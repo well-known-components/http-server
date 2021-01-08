@@ -13,14 +13,18 @@ console.log(generateSignature(10))
 
 */
 
-import { IHttpServerComponent as http } from "@well-known-components/interfaces"
+import { IHttpServerComponent as http, IMiddlewareAdapterHandler } from "@well-known-components/interfaces"
+
 
 /**
  * @public
  */
-export type ComposedMiddleware<Ctx> = (context: Ctx, next?: Middleware<Ctx>) => Promise<http.IResponse>
+export type Middleware<Ctx> = IMiddlewareAdapterHandler<Ctx, http.IResponse>
 
-export function compose<Ctx>(...middlewares: Middleware<Ctx>[]): ComposedMiddleware<Ctx> {
+/**
+ * @public
+ */
+export function compose<Ctx>(...middlewares: Middleware<Ctx>[]): Middleware<Ctx> {
   if (!Array.isArray(middlewares)) throw new TypeError("Middleware stack must be an array!")
 
   for (const fn of middlewares) {
@@ -49,7 +53,3 @@ export function compose<Ctx>(...middlewares: Middleware<Ctx>[]): ComposedMiddlew
   }
 }
 
-/**
- * @public
- */
-export type Middleware<Ctx> = (ctx: Ctx, next: () => Promise<http.IResponse>) => Promise<http.IResponse>

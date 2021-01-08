@@ -12,24 +12,33 @@ import { IBaseComponent } from '@well-known-components/interfaces';
 import type { IConfigComponent } from '@well-known-components/interfaces';
 import { IHttpServerComponent } from '@well-known-components/interfaces';
 import type { ILoggerComponent } from '@well-known-components/interfaces';
+import { IMiddlewareAdapterHandler } from '@well-known-components/interfaces';
 import type { IStatusCheckCapableComponent } from '@well-known-components/interfaces';
+import { Key } from 'path-to-regexp';
+
+// @public (undocumented)
+export type AllowedMethodOptions = Partial<{
+    throw: boolean;
+    notImplemented: NewableFunction;
+    methodNotAllowed: NewableFunction;
+}>;
 
 // @public
-export function createServerComponent(components: ServerComponents, options: Partial<IHttpServerOptions>): Promise<IHttpServerComponent & IBaseComponent & IStatusCheckCapableComponent>;
+export function createServerComponent<Context extends object>(components: ServerComponents, options: Partial<IHttpServerOptions>): Promise<IHttpServerComponent<Context> & IBaseComponent & IStatusCheckCapableComponent>;
 
 // @public
-export function createStatusCheckComponent(components: {
-    server: IHttpServerComponent;
+export function createStatusCheckComponent<Context extends object = {}>(components: {
+    server: IHttpServerComponent<Context>;
 }): Promise<IBaseComponent>;
 
 // @public
-export function createTestServerComponent(): Promise<IHttpServerComponent>;
+export function createTestServerComponent<Context extends object = {}>(): ITestHttpServerComponent<Context>;
 
 // @public (undocumented)
-export function getUnderlyingExpress<T>(server: IHttpServerComponent): Promise<T>;
+export function getUnderlyingExpress<T>(server: IHttpServerComponent<any>): Promise<T>;
 
 // @public (undocumented)
-export function getUnderlyingServer(server: IHttpServerComponent): Promise<http.Server | https.Server>;
+export function getUnderlyingServer(server: IHttpServerComponent<any>): Promise<http.Server | https.Server>;
 
 // @public (undocumented)
 export type IHttpServerOptions = {
@@ -42,17 +51,97 @@ export type IHttpServerOptions = {
 });
 
 // @public (undocumented)
+export type ITestHttpServerComponent<Context extends object> = IHttpServerComponent<Context> & {
+    dispatchRequest(req: IHttpServerComponent.IRequest): Promise<IHttpServerComponent.IResponse>;
+};
+
+// @public (undocumented)
+export type RoutedContext<Context, Path extends string> = IHttpServerComponent.PathAwareContext<Context, Path> & {
+    method: IHttpServerComponent.HTTPMethod;
+    path: string;
+    router: Router<any>;
+    routerName?: string;
+    captures: string[];
+    _matchedRoute?: string;
+    _matchedRouteName?: string;
+    matched?: Layer<Context>[];
+    routerPath?: string;
+};
+
+// @public (undocumented)
+export type RoutePathSignature<Context> = <T extends string>(path: T, middleware: IHttpServerComponent.IRequestHandler<IHttpServerComponent.PathAwareContext<Context, T>>) => void;
+
+// @public
+export class Router<Context extends {}> implements IHttpServerComponent.MethodHandlers<Context> {
+    constructor(opts?: RouterOptions);
+    all(path: string, middleware: Middleware<Context>): this;
+    allowedMethods(options?: AllowedMethodOptions): Function;
+    // (undocumented)
+    connect: RoutePathSignature<Context>;
+    // (undocumented)
+    delete: RoutePathSignature<Context>;
+    // (undocumented)
+    get: RoutePathSignature<Context>;
+    // (undocumented)
+    head: RoutePathSignature<Context>;
+    match(path: string, method: IHttpServerComponent.HTTPMethod): {
+        path: Layer<Context>[];
+        pathAndMethod: Layer<Context>[];
+        route: boolean;
+    };
+    // (undocumented)
+    methods: IHttpServerComponent.HTTPMethod[];
+    // (undocumented)
+    options: RoutePathSignature<Context>;
+    // (undocumented)
+    opts: RouterOptions;
+    // (undocumented)
+    patch: RoutePathSignature<Context>;
+    // (undocumented)
+    post: RoutePathSignature<Context>;
+    prefix(prefix: string): this;
+    // (undocumented)
+    put: RoutePathSignature<Context>;
+    redirect(source: string, destination: string, code?: number): this;
+    // Warning: (ae-forgotten-export) The symbol "LayerOptions" needs to be exported by the entry point index.d.ts
+    register(path: string, methods: ReadonlyArray<IHttpServerComponent.HTTPMethod>, middleware: IHttpServerComponent.IRequestHandler<Context>, opts?: LayerOptions): Layer<Context>;
+    route(name: string): Layer<Context> | null;
+    routes(): IHttpServerComponent.IRequestHandler<Context>;
+    // (undocumented)
+    stack: Layer<Context>[];
+    // (undocumented)
+    trace: RoutePathSignature<Context>;
+    // Warning: (ae-forgotten-export) The symbol "Middleware" needs to be exported by the entry point index.d.ts
+    use(...middlewares: Middleware<Context>[]): this;
+    // (undocumented)
+    use<P extends string>(route: P, ...middlewares: Middleware<Context>[]): this;
+}
+
+// @public (undocumented)
+export type RouterOptions = Partial<{
+    methods: IHttpServerComponent.HTTPMethod[];
+    prefix: string;
+    routerPath: string;
+    sensitive: boolean;
+    strict: boolean;
+}>;
+
+// @public (undocumented)
 export type ServerComponents = {
     config: IConfigComponent;
     logs: ILoggerComponent;
 };
 
 // @internal (undocumented)
-export function _setUnderlyingExpress<T>(server: IHttpServerComponent, getter: () => Promise<T>): void;
+export function _setUnderlyingExpress<T>(server: IHttpServerComponent<any>, getter: () => Promise<T>): void;
 
 // @internal (undocumented)
-export function _setUnderlyingServer(server: IHttpServerComponent, getter: () => Promise<http.Server | https.Server>): void;
+export function _setUnderlyingServer(server: IHttpServerComponent<any>, getter: () => Promise<http.Server | https.Server>): void;
 
+
+// Warnings were encountered during analysis:
+//
+// src/router.ts:55:3 - (ae-forgotten-export) The symbol "Layer" needs to be exported by the entry point index.d.ts
 
 // (No @packageDocumentation comment for this package)
 
