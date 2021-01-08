@@ -26,7 +26,7 @@ export async function createStatusCheckComponent<Context extends object = {}>(co
    * associated service's "pool" of pods that are handling requests,
    * by marking the pod as "Unready".
    */
-  routes.get("/health/ready", async () => {
+  routes.get("/health/ready", async (ctx) => {
     if (!mutStartOptions) {
       return { body: "initializing", status: 400 }
     }

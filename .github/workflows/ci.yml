@@ -16,6 +16,9 @@ jobs:
         run:  npm install
       - name: make
         run:  make build
+      - name: make
+        run:  make test
+        continue-on-error: true
       - name: Publish
         uses: menduz/oddish-action@master
         with:

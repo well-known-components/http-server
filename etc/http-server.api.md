@@ -6,6 +6,7 @@
 
 import type { CompressionOptions } from 'compression';
 import type { CorsOptions } from 'cors';
+import * as fetch_2 from 'node-fetch';
 import type * as http from 'http';
 import type * as https from 'https';
 import { IBaseComponent } from '@well-known-components/interfaces';
@@ -52,7 +53,8 @@ export type IHttpServerOptions = {
 
 // @public (undocumented)
 export type ITestHttpServerComponent<Context extends object> = IHttpServerComponent<Context> & {
-    dispatchRequest(req: IHttpServerComponent.IRequest): Promise<IHttpServerComponent.IResponse>;
+    dispatchRequest(url: fetch_2.Request): Promise<IHttpServerComponent.IResponse>;
+    dispatchRequest(url: fetch_2.RequestInfo, init?: fetch_2.RequestInit): Promise<IHttpServerComponent.IResponse>;
 };
 
 // @public (undocumented)
@@ -69,13 +71,14 @@ export type RoutedContext<Context, Path extends string> = IHttpServerComponent.P
 };
 
 // @public (undocumented)
-export type RoutePathSignature<Context> = <T extends string>(path: T, middleware: IHttpServerComponent.IRequestHandler<IHttpServerComponent.PathAwareContext<Context, T>>) => void;
+export type RoutePathSignature<Context> = <T extends string>(path: T, middleware: IHttpServerComponent.IRequestHandler<RoutedContext<Context, T>>) => void;
 
 // @public
 export class Router<Context extends {}> implements IHttpServerComponent.MethodHandlers<Context> {
     constructor(opts?: RouterOptions);
+    // Warning: (ae-forgotten-export) The symbol "Middleware" needs to be exported by the entry point index.d.ts
     all(path: string, middleware: Middleware<Context>): this;
-    allowedMethods(options?: AllowedMethodOptions): Function;
+    allowedMethods(options?: AllowedMethodOptions): IHttpServerComponent.IRequestHandler<Context>;
     // (undocumented)
     connect: RoutePathSignature<Context>;
     // (undocumented)
@@ -111,10 +114,9 @@ export class Router<Context extends {}> implements IHttpServerComponent.MethodHa
     stack: Layer<Context>[];
     // (undocumented)
     trace: RoutePathSignature<Context>;
-    // Warning: (ae-forgotten-export) The symbol "Middleware" needs to be exported by the entry point index.d.ts
-    use(...middlewares: Middleware<Context>[]): this;
+    use(...middlewares: IHttpServerComponent.IRequestHandler<RoutedContext<Context, string>>[]): this;
     // (undocumented)
-    use<P extends string>(route: P, ...middlewares: Middleware<Context>[]): this;
+    use<P extends string>(route: P, ...middlewares: IHttpServerComponent.IRequestHandler<RoutedContext<Context, P>>[]): this;
 }
 
 // @public (undocumented)
