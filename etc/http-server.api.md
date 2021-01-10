@@ -25,7 +25,7 @@ export type AllowedMethodOptions = Partial<{
 }>;
 
 // @public
-export function createServerComponent<Context extends object>(components: ServerComponents, options: Partial<IHttpServerOptions>): Promise<IHttpServerComponent<Context> & IBaseComponent & IStatusCheckCapableComponent>;
+export function createServerComponent<Context extends object>(components: ServerComponents, options: Partial<IHttpServerOptions>): Promise<FullHttpServerComponent<Context>>;
 
 // @public
 export function createStatusCheckComponent<Context extends object = {}>(components: {
@@ -36,10 +36,21 @@ export function createStatusCheckComponent<Context extends object = {}>(componen
 export function createTestServerComponent<Context extends object = {}>(): ITestHttpServerComponent<Context>;
 
 // @public (undocumented)
+export type FullHttpServerComponent<Context extends object> = IHttpServerComponent<Context> & IBaseComponent & IStatusCheckCapableComponent & {
+    resetMiddlewares(): void;
+};
+
+// @public (undocumented)
 export function getUnderlyingExpress<T>(server: IHttpServerComponent<any>): Promise<T>;
 
 // @public (undocumented)
 export function getUnderlyingServer(server: IHttpServerComponent<any>): Promise<http.Server | https.Server>;
+
+// @public (undocumented)
+export type IFetchComponent = {
+    fetch(url: fetch_2.Request): Promise<fetch_2.Response>;
+    fetch(url: fetch_2.RequestInfo, init?: fetch_2.RequestInit): Promise<fetch_2.Response>;
+};
 
 // @public (undocumented)
 export type IHttpServerOptions = {
@@ -52,21 +63,17 @@ export type IHttpServerOptions = {
 });
 
 // @public (undocumented)
-export type ITestHttpServerComponent<Context extends object> = IHttpServerComponent<Context> & {
-    dispatchRequest(url: fetch_2.Request): Promise<IHttpServerComponent.IResponse>;
-    dispatchRequest(url: fetch_2.RequestInfo, init?: fetch_2.RequestInit): Promise<IHttpServerComponent.IResponse>;
+export type ITestHttpServerComponent<Context extends object> = IHttpServerComponent<Context> & IFetchComponent & {
+    resetMiddlewares(): void;
 };
 
 // @public (undocumented)
 export type RoutedContext<Context, Path extends string> = IHttpServerComponent.PathAwareContext<Context, Path> & {
-    method: IHttpServerComponent.HTTPMethod;
-    path: string;
     router: Router<any>;
-    routerName?: string;
     captures: string[];
     _matchedRoute?: string;
     _matchedRouteName?: string;
-    matched?: Layer<Context>[];
+    matched?: Layer<Context, Path>[];
     routerPath?: string;
 };
 
@@ -87,13 +94,14 @@ export class Router<Context extends {}> implements IHttpServerComponent.MethodHa
     get: RoutePathSignature<Context>;
     // (undocumented)
     head: RoutePathSignature<Context>;
-    match(path: string, method: IHttpServerComponent.HTTPMethod): {
-        path: Layer<Context>[];
-        pathAndMethod: Layer<Context>[];
+    match(path: string, method: string): {
+        path: Layer<Context, string>[];
+        pathAndMethod: Layer<Context, string>[];
         route: boolean;
     };
     // (undocumented)
-    methods: IHttpServerComponent.HTTPMethod[];
+    methods: (IHttpServerComponent.HTTPMethod | string)[];
+    middleware(): IHttpServerComponent.IRequestHandler<Context>;
     // (undocumented)
     options: RoutePathSignature<Context>;
     // (undocumented)
@@ -107,11 +115,9 @@ export class Router<Context extends {}> implements IHttpServerComponent.MethodHa
     put: RoutePathSignature<Context>;
     redirect(source: string, destination: string, code?: number): this;
     // Warning: (ae-forgotten-export) The symbol "LayerOptions" needs to be exported by the entry point index.d.ts
-    register(path: string, methods: ReadonlyArray<IHttpServerComponent.HTTPMethod>, middleware: IHttpServerComponent.IRequestHandler<Context>, opts?: LayerOptions): Layer<Context>;
-    route(name: string): Layer<Context> | null;
-    routes(): IHttpServerComponent.IRequestHandler<Context>;
+    register<Path extends string>(path: Path, methods: ReadonlyArray<IHttpServerComponent.HTTPMethod>, middleware: IHttpServerComponent.IRequestHandler<Context>, opts?: LayerOptions): Layer<Context, Path>;
     // (undocumented)
-    stack: Layer<Context>[];
+    stack: Layer<Context, string>[];
     // (undocumented)
     trace: RoutePathSignature<Context>;
     use(...middlewares: IHttpServerComponent.IRequestHandler<RoutedContext<Context, string>>[]): this;
@@ -143,7 +149,7 @@ export function _setUnderlyingServer(server: IHttpServerComponent<any>, getter: 
 
 // Warnings were encountered during analysis:
 //
-// src/router.ts:55:3 - (ae-forgotten-export) The symbol "Layer" needs to be exported by the entry point index.d.ts
+// src/router.ts:51:3 - (ae-forgotten-export) The symbol "Layer" needs to be exported by the entry point index.d.ts
 
 // (No @packageDocumentation comment for this package)
 
