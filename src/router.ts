@@ -37,22 +37,18 @@ function setInjectedRouter<C>(middleware: Middleware<C>, router: Router<any>) {
 
 /** @public */
 export type RoutedContext<Context, Path extends string> = IHttpServerComponent.PathAwareContext<Context, Path> & {
-  // TODO: move to HTTP
-  method: IHttpServerComponent.HTTPMethod
-  path: string
-  // --
-
   // @internal
   router: Router<any>
-  routerName?: string
+  // routerName?: string
 
   // capture groups from the url
   captures: string[]
 
   // @internal
   _matchedRoute?: string
+  // @internal
   _matchedRouteName?: string
-  matched?: Layer<Context>[]
+  matched?: Layer<Context, Path>[]
   routerPath?: string
 }
 
@@ -68,6 +64,7 @@ function createMethodHandler<Context>(
 ): RoutePathSignature<Context> {
   return function (path, middleware) {
     router.register(path, [method], middleware as IHttpServerComponent.IRequestHandler<Context>, {})
+    return router
   }
 }
 
@@ -98,12 +95,20 @@ function createMethodHandler<Context>(
 
 export class Router<Context extends {}> implements IHttpServerComponent.MethodHandlers<Context> {
   opts: RouterOptions
-  methods: IHttpServerComponent.HTTPMethod[]
+  methods: (IHttpServerComponent.HTTPMethod | string)[]
   // params: Record<string, Middleware<http.DefaultContext<Context>>> = {}
-  stack: Layer<Context>[] = []
+  stack: Layer<Context, string>[] = []
   constructor(opts?: RouterOptions) {
     this.opts = opts || {}
-    this.methods = this.opts.methods || ["HEAD", "OPTIONS", "GET", "PUT", "PATCH", "POST", "DELETE"]
+    this.methods = this.opts?.methods?.map(($) => $.toUpperCase()) || [
+      "HEAD",
+      "OPTIONS",
+      "GET",
+      "PUT",
+      "PATCH",
+      "POST",
+      "DELETE",
+    ]
   }
 
   connect = createMethodHandler<Context>(this, "CONNECT")
@@ -145,7 +150,10 @@ export class Router<Context extends {}> implements IHttpServerComponent.MethodHa
    */
 
   use(...middlewares: IHttpServerComponent.IRequestHandler<RoutedContext<Context, string>>[]): this
-  use<P extends string>(route: P, ...middlewares: IHttpServerComponent.IRequestHandler<RoutedContext<Context, P>>[]): this
+  use<P extends string>(
+    route: P,
+    ...middlewares: IHttpServerComponent.IRequestHandler<RoutedContext<Context, P>>[]
+  ): this
   use(): this {
     const middleware: Middleware<Context>[] = Array.prototype.slice.call(arguments)
     let path: string | undefined
@@ -209,19 +217,15 @@ export class Router<Context extends {}> implements IHttpServerComponent.MethodHa
 
   /**
    * Returns router middleware which dispatches a route matching the request.
-   *
    */
-
-  routes(): IHttpServerComponent.IRequestHandler<Context> {
+  middleware(): IHttpServerComponent.IRequestHandler<Context> {
     const router = this
 
     const routerMiddleware: IHttpServerComponent.IRequestHandler<
       RoutedContext<Context, any>
     > = function routerMiddleware(ctx, next) {
-      // debug("%s %s", ctx.method, ctx.path)
-
-      const path = router.opts.routerPath || ctx.routerPath || ctx.path
-      const matched = router.match(path, ctx.method)
+      const path = router.opts.routerPath || ctx.routerPath || ctx.url.pathname
+      const matched = router.match(path, ctx.request.method)
       let layerChain: Middleware<RoutedContext<IHttpServerComponent.DefaultContext<Context>, string>>[]
 
       if (ctx.matched) {
@@ -246,7 +250,7 @@ export class Router<Context extends {}> implements IHttpServerComponent.MethodHa
           ctx.captures = layer.captures(path)
           ctx.params = ctx.params = layer.params(ctx.captures, ctx.params)
           ctx.routerPath = layer.path
-          ctx.routerName = layer.name || undefined
+          // ctx.routerName = layer.name || undefined
           ctx._matchedRoute = layer.path
           if (layer.name) {
             ctx._matchedRouteName = layer.name
@@ -326,8 +330,9 @@ export class Router<Context extends {}> implements IHttpServerComponent.MethodHa
         }
 
         const allowedArr = Object.keys(allowed)
+        const currentMethod = ctx.request.method.toUpperCase()
 
-        if (!~implemented.indexOf(ctx.method)) {
+        if (!~implemented.indexOf(currentMethod)) {
           if (options.throw) {
             let notImplementedThrowable =
               typeof options.notImplemented === "function"
@@ -342,12 +347,12 @@ export class Router<Context extends {}> implements IHttpServerComponent.MethodHa
             }
           }
         } else if (allowedArr.length) {
-          if (ctx.method === "OPTIONS") {
+          if (currentMethod === "OPTIONS") {
             return {
               status: 200,
               headers: { Allow: allowedArr.join(", ") },
             }
-          } else if (!allowed[ctx.method]) {
+          } else if (!allowed[currentMethod]) {
             if (options.throw) {
               let notAllowedThrowable =
                 typeof options.methodNotAllowed === "function"
@@ -429,12 +434,12 @@ export class Router<Context extends {}> implements IHttpServerComponent.MethodHa
    * @param middleware - Multiple middleware also accepted.
    */
 
-  register(
-    path: string,
+  register<Path extends string>(
+    path: Path,
     methods: ReadonlyArray<IHttpServerComponent.HTTPMethod>,
     middleware: IHttpServerComponent.IRequestHandler<Context>,
     opts?: LayerOptions
-  ): Layer<Context> {
+  ): Layer<Context, Path> {
     opts = opts || {}
 
     const router = this
@@ -470,35 +475,19 @@ export class Router<Context extends {}> implements IHttpServerComponent.MethodHa
   }
 
   /**
-   * Lookup route with given `name`.
-   *
-   * @param name -
-   */
-
-  route(name: string): Layer<Context> | null {
-    const routes = this.stack
-
-    for (let len = routes.length, i = 0; i < len; i++) {
-      if (routes[i].name && routes[i].name === name) return routes[i]
-    }
-
-    return null
-  }
-
-  /**
    * Match given `path` and return corresponding routes.
    *
    * @param path -
    * @param method -
    */
 
-  match(path: string, method: IHttpServerComponent.HTTPMethod) {
+  match(path: string, method: string) {
     const layers = this.stack
-    let layer: Layer<Context>
+    let layer: Layer<Context, string>
 
     const matched = {
-      path: [] as Layer<Context>[],
-      pathAndMethod: [] as Layer<Context>[],
+      path: [] as Layer<Context, string>[],
+      pathAndMethod: [] as Layer<Context, string>[],
       route: false,
     }
 
@@ -510,7 +499,7 @@ export class Router<Context extends {}> implements IHttpServerComponent.MethodHa
       if (layer.match(path)) {
         matched.path.push(layer)
 
-        if (layer.methods.length === 0 || ~layer.methods.indexOf(method)) {
+        if (layer.methods.length === 0 || ~layer.methods.indexOf(method as any)) {
           matched.pathAndMethod.push(layer)
           if (layer.methods.length) matched.route = true
         }

@@ -1,6 +1,5 @@
 import { IHttpServerComponent as http } from "@well-known-components/interfaces"
-import { pathToRegexp, compile, parse, Key, ParseOptions, TokensToFunctionOptions } from "path-to-regexp"
-import { parse as parseUrl, format as formatUrl } from "url"
+import { pathToRegexp, Key } from "path-to-regexp"
 import { Middleware } from "./middleware"
 
 export type LayerOptions = Partial<{
@@ -25,7 +24,7 @@ export type LayerOptions = Partial<{
  *
  * @public
  */
-export class Layer<Context> {
+export class Layer<Context, Path extends string> {
   opts: LayerOptions
   name: string | null
   methods: http.HTTPMethod[]
@@ -35,9 +34,11 @@ export class Layer<Context> {
   regexp: RegExp
 
   constructor(
-    path: string,
+    path: Path,
     methods: ReadonlyArray<http.HTTPMethod>,
-    middleware: Middleware<http.DefaultContext<Context>> | Middleware<http.DefaultContext<Context>>[],
+    middleware:
+      | Middleware<http.PathAwareContext<http.DefaultContext<Context>, Path>>
+      | Middleware<http.PathAwareContext<http.DefaultContext<Context>, Path>>[],
     opts?: LayerOptions
   ) {
     this.opts = opts || {}

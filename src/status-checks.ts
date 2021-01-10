@@ -93,7 +93,7 @@ export async function createStatusCheckComponent<Context extends object = {}>(co
     return { status: 200, body: "alive" }
   })
 
-  const middleware = routes.routes()
+  const middleware = routes.middleware()
   server.use(middleware)
 
   return {

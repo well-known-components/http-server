@@ -2,18 +2,30 @@ import cors from "cors"
 import compression from "compression"
 import express from "express"
 import future from "fp-future"
+import type * as ExpressModule from "express"
 import type {
   IBaseComponent,
   IHttpServerComponent,
   IStatusCheckCapableComponent,
 } from "@well-known-components/interfaces"
 import { _setUnderlyingExpress, _setUnderlyingServer } from "./injectors"
-import {
-  getServer,
-  transformToExpressHandler,
-  registerExpressHandler,
-} from "./logic"
+import { getServer, success, getRequestFromNodeMessage } from "./logic"
 import type { ServerComponents, IHttpServerOptions } from "./types"
+import { IncomingMessage } from "http"
+import { createServerHandler } from "./server-handler"
+
+/**
+ * @public
+ */
+export type FullHttpServerComponent<Context extends object> = IHttpServerComponent<Context> &
+  IBaseComponent &
+  IStatusCheckCapableComponent & {
+    /**
+     * WARNING! this is a very destructive function, it resets all the .use middlewares
+     * you must reconfigure your handlers entirely after calling this function
+     */
+    resetMiddlewares(): void
+  }
 
 /**
  * Creates a http-server component
@@ -22,7 +34,7 @@ import type { ServerComponents, IHttpServerOptions } from "./types"
 export async function createServerComponent<Context extends object>(
   components: ServerComponents,
   options: Partial<IHttpServerOptions>
-): Promise<IHttpServerComponent<Context> & IBaseComponent & IStatusCheckCapableComponent> {
+): Promise<FullHttpServerComponent<Context>> {
   const { config, logs } = components
   const logger = logs.getLogger("http-server")
 
@@ -93,26 +105,9 @@ export async function createServerComponent<Context extends object>(
 
   let configuredContext: Context = Object.create({})
 
-  // function createMethodHandler(method: Lowercase<IHttpServerComponent.HTTPMethod>) {
-  //   return <Context, Path extends string = ''>(context: Context, path: Path, handler: IHttpServerComponent.IRequestHandler<Context, Path>) => {
-  //     const expressHandler = transformToExpressHandler<any, Path>(logger, context as any, handler)
-  //     registerExpressRouteMethodHandler(app, method, path, expressHandler)
-  //   }
-  // }
+  const serverHandler = createServerHandler<Context>()
 
-  // const methodHandlers: IHttpServerComponent.MethodHandlers = {
-  //   get: createMethodHandler("get"),
-  //   put: createMethodHandler("put"),
-  //   delete: createMethodHandler("delete"),
-  //   connect: createMethodHandler("connect"),
-  //   options: createMethodHandler("options"),
-  //   head: createMethodHandler("head"),
-  //   patch: createMethodHandler("patch"),
-  //   post: createMethodHandler("post"),
-  //   trace: createMethodHandler("trace"),
-  // }
-
-  const ret: IHttpServerComponent<Context> & IBaseComponent & IStatusCheckCapableComponent = {
+  const ret: FullHttpServerComponent<Context> = {
     // IBaseComponent
     start,
     stop,
@@ -124,14 +119,30 @@ export async function createServerComponent<Context extends object>(
       return server.listening
     },
     // IHttpServerComponent
-    use(handler) {
-      const expressHandler = transformToExpressHandler<any, ''>(logger, () => configuredContext, handler)
-      registerExpressHandler(app, expressHandler)
-    },
-    setContext(context){
+    use: serverHandler.use,
+    setContext(context) {
       configuredContext = Object.create(context)
-    }
+    },
+
+    // extra
+    resetMiddlewares: serverHandler.resetMiddlewares,
   }
+
+  async function asyncHandle(req: IncomingMessage, res: ExpressModule.Response) {
+    const request = getRequestFromNodeMessage(req)
+    const response = await serverHandler.processRequest(configuredContext, request)
+    success(response, res)
+  }
+
+  app.use((req, res) => {
+    asyncHandle(req, res).catch((error) => {
+      res.status(500)
+      res.end()
+      // TODO: logger
+      logger.debug("error processing request", { url: req.url, method: req.method })
+      logger.error(error)
+    })
+  })
 
   _setUnderlyingServer(ret, async () => {
     if (!server) throw new Error("The server is stopped")
