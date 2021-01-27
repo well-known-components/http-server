@@ -18,7 +18,7 @@ export const createE2ERunner = (options: RunnerOptions<TestComponents<any>>) => 
     describe(name, () => {
       let program: Lifecycle.ComponentBasedProgram<TestComponents<C>>
 
-      it("Lifecycle#start", async () => {
+      before(async () => {
         program = await Lifecycle.programEntryPoint<TestComponents<C>>(options)
       })
 
@@ -31,7 +31,7 @@ export const createE2ERunner = (options: RunnerOptions<TestComponents<any>>) => 
 
       suite(getComponents)
 
-      it("Lifecycle#stop", async () => {
+      after(async () => {
         if (program) {
           await program.stop()
         }

@@ -157,6 +157,7 @@ function integrationSuite(getComponents: () => TestComponents<any>) {
     {
       const res = await fetch.fetch(`/users/test`)
       expect(res.headers.get("X-b")).toEqual("asd")
+      expect(res.status).toEqual(200)
     }
   })
 

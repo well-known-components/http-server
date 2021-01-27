@@ -1,12 +1,4 @@
 import type { IHttpServerComponent, IHttpServerComponent as http } from "@well-known-components/interfaces"
-import {
-  coerceErrorsMiddleware,
-  contextFromRequest,
-  defaultHandler,
-  getDefaultMiddlewares,
-  normalizeResponseBody,
-} from "./logic"
-import { compose, Middleware } from "./middleware"
 import * as fetch from "node-fetch"
 import { createServerHandler } from "./server-handler"
 import { PassThrough, pipeline, Stream } from "stream"
@@ -34,8 +26,14 @@ export function createTestServerComponent<Context extends object = {}>(): ITestH
 
   const ret: ITestHttpServerComponent<Context> = {
     async fetch(url, initRequest?) {
-      const req = url instanceof fetch.Request ? url : new fetch.Request(url, initRequest)
-      req.hostname = req.hostname || req.headers.get("host") || ""
+      let req = url instanceof fetch.Request ? url : new fetch.Request(url, initRequest)
+
+      const hostname = req.hostname || req.headers.get("host") || "0.0.0.0"
+      const protocol = "http"
+
+      const newUrl = new URL(url, protocol + "://" + hostname)
+      req = new fetch.Request(newUrl.toString(), req)
+
       const res = await serverHandler.processRequest(currentContext, req)
       if (res.body instanceof Stream) {
         // since we have no server and actual socket pipes, what we receive here

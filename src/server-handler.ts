@@ -1,6 +1,5 @@
 import { contextFromRequest, defaultHandler, getDefaultMiddlewares, normalizeResponseBody } from "./logic"
 import { Middleware, compose } from "./middleware"
-import HttpError from "http-errors"
 import * as fetch from "node-fetch"
 import { IHttpServerComponent as http } from "@well-known-components/interfaces"
 

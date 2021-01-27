@@ -8,11 +8,12 @@ import type {
   IHttpServerComponent,
   IStatusCheckCapableComponent,
 } from "@well-known-components/interfaces"
-import { _setUnderlyingExpress, _setUnderlyingServer } from "./injectors"
+import { _setUnderlyingServer } from "./injectors"
 import { getServer, success, getRequestFromNodeMessage } from "./logic"
 import type { ServerComponents, IHttpServerOptions } from "./types"
 import { IncomingMessage } from "http"
 import { createServerHandler } from "./server-handler"
+import * as https from "https"
 
 /**
  * @public
@@ -129,7 +130,7 @@ export async function createServerComponent<Context extends object>(
   }
 
   async function asyncHandle(req: IncomingMessage, res: ExpressModule.Response) {
-    const request = getRequestFromNodeMessage(req)
+    const request = getRequestFromNodeMessage(req, host, server instanceof https.Server ? "https" : "http")
     const response = await serverHandler.processRequest(configuredContext, request)
     success(response, res)
   }
@@ -147,10 +148,6 @@ export async function createServerComponent<Context extends object>(
   _setUnderlyingServer(ret, async () => {
     if (!server) throw new Error("The server is stopped")
     return (await listen) || server!
-  })
-
-  _setUnderlyingExpress(ret, async () => {
-    return app
   })
 
   return ret

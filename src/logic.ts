@@ -5,7 +5,6 @@ import * as https from "https"
 import type * as ExpressModule from "express"
 import type { IHttpServerComponent } from "@well-known-components/interfaces"
 import type { IHttpServerOptions } from "./types"
-import { parse as parseUrl } from "url"
 import { HttpError } from "http-errors"
 import { Middleware } from "./middleware"
 
@@ -29,6 +28,7 @@ const NAME = Symbol.toStringTag
  */
 export const isBlob = (object): object is Blob => {
   return (
+    object !== null &&
     typeof object === "object" &&
     typeof object.arrayBuffer === "function" &&
     typeof object.type === "string" &&
@@ -58,12 +58,19 @@ export function success(data: fetch.Response, res: ExpressModule.Response) {
     res.send(body)
   } else if (isBlob(body)) {
     const blob = body as Blob
-    ;(blob.stream() as any).pipe(res)
-  } else if (body.pipe) {
+    const stream = blob.stream()
+    if (stream.pipeTo) {
+      stream.pipeTo(res as any)
+    } else {
+      ;(blob.stream() as any).pipe(res)
+    }
+  } else if (body && body.pipe) {
     body.pipe(res)
-  } else {
+  } else if (body !== undefined && body !== null) {
     console.dir(body)
-    throw new Error("Unknown body")
+    throw new Error("Unknown response body")
+  } else {
+    res.end()
   }
 }
 
@@ -73,7 +80,9 @@ export function getDefaultMiddlewares(): Middleware<any>[] {
 }
 
 export const getRequestFromNodeMessage = <T extends http.IncomingMessage>(
-  request: T
+  request: T,
+  host: string,
+  protocol: string
 ): IHttpServerComponent.IRequest => {
   const headers = new fetch.Headers()
 
@@ -97,9 +106,8 @@ export const getRequestFromNodeMessage = <T extends http.IncomingMessage>(
     requestInit.body = request
   }
 
-  const ret = new fetch.Request(request.url, requestInit)
-
-  ret.hostname = headers.get("host") || ""
+  const baseUrl = protocol + "://" + (headers.get("host") || host || "0.0.0.0")
+  const ret = new fetch.Request(new URL(request.url, baseUrl), requestInit)
 
   return ret
 }
@@ -238,7 +246,7 @@ export function contextFromRequest<Ctx extends object>(baseCtx: Ctx, request: IH
 
   // hidrate context with the request
   newContext.request = request
-  newContext.url = parseUrl(request.url, true)
+  newContext.url = new URL(request.url)
 
   return newContext
 }

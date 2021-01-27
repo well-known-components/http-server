@@ -735,13 +735,13 @@ it("supports custom routing detect path: ctx.routerPath", async function () {
   const router = new Router()
   app.use(function (ctx, next) {
     // bind helloworld.example.com/users => example.com/helloworld/users
-    const appname = ctx.request.hostname.split(".", 1)[0]
-    ctx.routerPath = "/" + appname + ctx.url.path
+    const appname = ctx.url.hostname.split(".", 1)[0]
+    ctx.routerPath = "/" + appname + ctx.url.pathname
     return next()
   })
   app.use(router.middleware())
   router.get("/helloworld/users", async function (ctx) {
-    return { body: ctx.request.method + " " + ctx.url.path }
+    return { body: ctx.request.method + " " + ctx.url.pathname }
   })
 
   const res = await app.fetch("/users", { headers: { Host: "helloworld.example.com" } })
