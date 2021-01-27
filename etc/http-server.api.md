@@ -41,9 +41,6 @@ export type FullHttpServerComponent<Context extends object> = IHttpServerCompone
 };
 
 // @public (undocumented)
-export function getUnderlyingExpress<T>(server: IHttpServerComponent<any>): Promise<T>;
-
-// @public (undocumented)
 export function getUnderlyingServer(server: IHttpServerComponent<any>): Promise<http.Server | https.Server>;
 
 // @public (undocumented)
@@ -139,9 +136,6 @@ export type ServerComponents = {
     config: IConfigComponent;
     logs: ILoggerComponent;
 };
-
-// @internal (undocumented)
-export function _setUnderlyingExpress<T>(server: IHttpServerComponent<any>, getter: () => Promise<T>): void;
 
 // @internal (undocumented)
 export function _setUnderlyingServer(server: IHttpServerComponent<any>, getter: () => Promise<http.Server | https.Server>): void;
