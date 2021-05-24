@@ -411,7 +411,7 @@ export class Router<Context extends {}> implements IHttpServerComponent.MethodHa
    * @param code - HTTP status code (default: 301).
    */
 
-  redirect(source: string, destination: string, code?: number): this {
+  redirect(source: string, destination: string, code: number = 301): this {
     // lookup source route by name
     if (source[0] !== "/") throw new Error(`Relative URL must start with / got ${JSON.stringify(source)} instead`)
 
@@ -422,7 +422,7 @@ export class Router<Context extends {}> implements IHttpServerComponent.MethodHa
       )
 
     return this.all(source, async (ctx) => {
-      return { status: code || 302, headers: { Location: destination } }
+      return { status: code, headers: { Location: destination } }
     })
   }
 

@@ -872,7 +872,7 @@ describe("Router#[verb]()", function () {
   })
 })
 
-describe("Router#use()", async function () {
+describe("Router#use()", function () {
   it("uses router middleware without path", async function () {
     const app = createTestServerComponent()
     const router = new Router<{ foo }>()
@@ -1161,27 +1161,26 @@ describe("Router#register()", function () {
       expect(router.stack).toHaveProperty("length", 1)
       expect(router.stack[0]).toBeInstanceOf(Layer)
       expect(router.stack[0]).toHaveProperty("path", "/source")
+    })
+    it("redirects to external sites", async function () {
+      const app = createTestServerComponent()
+      const router = new Router()
+      app.use(router.middleware())
+      router.redirect("/", "https://www.example.com")
+      const res = await app.fetch("/", { method: "post" })
+      expect(res.status).toEqual(301)
 
-      it("redirects to external sites", async function () {
-        const app = createTestServerComponent()
-        const router = new Router()
-        app.use(router.middleware())
-        router.redirect("/", "https://www.example.com")
-        const res = await app.fetch("/", { method: "post" })
-        expect(res.status).toEqual(301)
+      expect(res.headers.get("location")).toEqual("https://www.example.com")
+    })
 
-        expect(res.headers.get("location")).toEqual("https://www.example.com")
-      })
-
-      it("redirects to any external protocol", async function () {
-        const app = createTestServerComponent()
-        const router = new Router()
-        app.use(router.middleware())
-        router.redirect("/", "my-custom-app-protocol://www.example.com/foo")
-        const res = await app.fetch("/", { method: "post" })
-        expect(res.status).toEqual(301)
-        expect(res.headers.get("location")).toEqual("my-custom-app-protocol://www.example.com/foo")
-      })
+    it("redirects to any external protocol", async function () {
+      const app = createTestServerComponent()
+      const router = new Router()
+      app.use(router.middleware())
+      router.redirect("/", "my-custom-app-protocol://www.example.com/foo")
+      const res = await app.fetch("/", { method: "post" })
+      expect(res.status).toEqual(301)
+      expect(res.headers.get("location")).toEqual("my-custom-app-protocol://www.example.com/foo")
     })
 
     describe("Router#route()", function () {
@@ -1503,7 +1502,7 @@ describe("Router#register()", function () {
           const app = createTestServerComponent()
           let middlewareCount = 0
 
-          before(function () {
+          beforeAll(function () {
             const router = new Router<{ thing }>()
 
             router.use(function (ctx, next) {

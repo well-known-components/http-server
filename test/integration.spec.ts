@@ -10,9 +10,9 @@ import busboy from "busboy"
 describeE2E("integration sanity tests using express server backend", integrationSuite)
 describeTestE2E("integration sanity tests using test server", integrationSuite)
 
-function integrationSuite(getComponents: () => TestComponents<any>) {
+function integrationSuite({ components }: { components: TestComponents }) {
   it("returns a stream", async () => {
-    const { fetch, server } = getComponents()
+    const { fetch, server } = components
     server.resetMiddlewares()
 
     const routes = new Router()
@@ -37,7 +37,7 @@ function integrationSuite(getComponents: () => TestComponents<any>) {
   })
 
   it("send and read form data using busboy", async () => {
-    const { fetch, server } = getComponents()
+    const { fetch, server } = components
     server.resetMiddlewares()
 
     const routes = new Router()
@@ -90,7 +90,7 @@ function integrationSuite(getComponents: () => TestComponents<any>) {
   })
 
   it("unknown route should yield 404", async () => {
-    const { fetch, server } = getComponents()
+    const { fetch, server } = components
     server.resetMiddlewares()
 
     const res = await fetch.fetch(`/test-${Math.random()}`)
@@ -100,7 +100,7 @@ function integrationSuite(getComponents: () => TestComponents<any>) {
   })
 
   it("GET / json response", async () => {
-    const { fetch, server } = getComponents()
+    const { fetch, server } = components
     server.resetMiddlewares()
 
     const routes = new Router()
@@ -124,7 +124,7 @@ function integrationSuite(getComponents: () => TestComponents<any>) {
   })
 
   it("custom headers reach the handlers", async () => {
-    const { fetch, server } = getComponents()
+    const { fetch, server } = components
     server.resetMiddlewares()
 
     const routes = new Router()
@@ -143,7 +143,7 @@ function integrationSuite(getComponents: () => TestComponents<any>) {
   })
 
   it("custom headers in the response", async () => {
-    const { fetch, server } = getComponents()
+    const { fetch, server } = components
     server.resetMiddlewares()
 
     const routes = new Router()
@@ -162,7 +162,7 @@ function integrationSuite(getComponents: () => TestComponents<any>) {
   })
 
   it("params are parsed (smoke)", async () => {
-    const { fetch, server } = getComponents()
+    const { fetch, server } = components
     server.resetMiddlewares()
 
     const routes = new Router()
@@ -182,7 +182,7 @@ function integrationSuite(getComponents: () => TestComponents<any>) {
   })
 
   it("params are parsed with query string (smoke)", async () => {
-    const { fetch, server } = getComponents()
+    const { fetch, server } = components
     server.resetMiddlewares()
 
     const routes = new Router()
