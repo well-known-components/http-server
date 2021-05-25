@@ -13,7 +13,7 @@ build:
 	./node_modules/.bin/api-extractor run $(LOCAL_ARG) --typescript-compiler-folder ./node_modules/typescript
 
 test:
-	export TS_NODE_PROJECT='./test/tsconfig.json'; node $(INSPECT) --require ts-node/register --async-stack-traces --experimental-modules node_modules/.bin/_mocha --timeout 10000 --reporter spec
+	./node_modules/.bin/jest --forceExit --detectOpenHandles --coverage --verbose
 
 ci: | build test
 

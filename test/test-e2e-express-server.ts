@@ -1,18 +1,21 @@
 import { createConfigComponent } from "@well-known-components/env-config-provider"
 import { createLogComponent } from "@well-known-components/logger"
+import { createRunner } from "@well-known-components/test-helpers"
 import nodeFetch from "node-fetch"
 import { createServerComponent, IFetchComponent } from "../src"
-import { createE2ERunner, TestComponents } from "./test-helpers"
+import { TestComponents } from "./test-helpers"
 
 let currentPort = 19000
 
 // creates a "mocha-like" describe function to run tests using the test components
-export const describeE2E = createE2ERunner({
-  async main(components) {},
+export const describeE2E = createRunner<TestComponents>({
+  async main(program) {
+    await program.startComponents()
+  },
   initComponents,
 })
 
-async function initComponents<C extends object>(): Promise<TestComponents<C>> {
+async function initComponents<C extends object>(): Promise<TestComponents> {
   const logs = createLogComponent()
 
   const config = createConfigComponent({
