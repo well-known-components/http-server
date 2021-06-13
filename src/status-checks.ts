@@ -6,6 +6,9 @@ import {
 } from "@well-known-components/interfaces"
 import { Router } from "./router"
 
+/**
+ * @beta
+ */
 export type StandardStatusResponse = {
   status: "pass" | "fail" | "warn"
   version?: string
@@ -17,6 +20,9 @@ export type StandardStatusResponse = {
   details: Record<string, StandardStatusResponseDetail>
 }
 
+/**
+ * @beta
+ */
 export type StandardStatusResponseDetail = {
   status: "pass" | "fail" | "warn"
   componentType?: string

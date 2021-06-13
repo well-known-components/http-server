@@ -141,7 +141,7 @@ export type ServerComponents = {
 // @internal (undocumented)
 export function _setUnderlyingServer(server: IHttpServerComponent<any>, getter: () => Promise<http.Server | https.Server>): void;
 
-// @public (undocumented)
+// @beta (undocumented)
 export type StandardStatusResponse = {
     status: "pass" | "fail" | "warn";
     version?: string;
@@ -153,7 +153,7 @@ export type StandardStatusResponse = {
     details: Record<string, StandardStatusResponseDetail>;
 };
 
-// @public (undocumented)
+// @beta (undocumented)
 export type StandardStatusResponseDetail = {
     status: "pass" | "fail" | "warn";
     componentType?: string;
