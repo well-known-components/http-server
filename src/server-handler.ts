@@ -5,8 +5,8 @@ import { IHttpServerComponent as http } from "@well-known-components/interfaces"
 
 // @internal
 export function createServerHandler<Context extends object>() {
-  let middlewares: Middleware<Context>[]
-  let theFinalHandler: Middleware<Context>
+  let middlewares: http.IRequestHandler<Context>[]
+  let theFinalHandler: http.IRequestHandler<Context>
 
   function doMiddlewareComposition() {
     theFinalHandler = compose(...middlewares)

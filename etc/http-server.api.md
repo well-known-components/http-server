@@ -10,7 +10,7 @@ import * as fetch_2 from 'node-fetch';
 import type * as http from 'http';
 import type * as https from 'https';
 import { IBaseComponent } from '@well-known-components/interfaces';
-import type { IConfigComponent } from '@well-known-components/interfaces';
+import { IConfigComponent } from '@well-known-components/interfaces';
 import { IHttpServerComponent } from '@well-known-components/interfaces';
 import type { ILoggerComponent } from '@well-known-components/interfaces';
 import { IMiddlewareAdapterHandler } from '@well-known-components/interfaces';
@@ -30,6 +30,7 @@ export function createServerComponent<Context extends object>(components: Server
 // @public
 export function createStatusCheckComponent<Context extends object = {}>(components: {
     server: IHttpServerComponent<Context>;
+    config: IConfigComponent;
 }): Promise<IBaseComponent>;
 
 // @public
@@ -114,7 +115,7 @@ export class Router<Context extends {}> implements IHttpServerComponent.MethodHa
     // Warning: (ae-forgotten-export) The symbol "LayerOptions" needs to be exported by the entry point index.d.ts
     register<Path extends string>(path: Path, methods: ReadonlyArray<IHttpServerComponent.HTTPMethod>, middleware: IHttpServerComponent.IRequestHandler<Context>, opts?: LayerOptions): Layer<Context, Path>;
     // (undocumented)
-    stack: Layer<Context, string>[];
+    stack: Layer<Context, any>[];
     // (undocumented)
     trace: RoutePathSignature<Context>;
     use(...middlewares: IHttpServerComponent.IRequestHandler<RoutedContext<Context, string>>[]): this;
@@ -139,6 +140,25 @@ export type ServerComponents = {
 
 // @internal (undocumented)
 export function _setUnderlyingServer(server: IHttpServerComponent<any>, getter: () => Promise<http.Server | https.Server>): void;
+
+// @public (undocumented)
+export type StandardStatusResponse = {
+    status: "pass" | "fail" | "warn";
+    version?: string;
+    releaseId?: string;
+    notes?: string[];
+    output?: string;
+    serviceId?: string;
+    description?: string;
+    details: Record<string, StandardStatusResponseDetail>;
+};
+
+// @public (undocumented)
+export type StandardStatusResponseDetail = {
+    status: "pass" | "fail" | "warn";
+    componentType?: string;
+    componentId?: string;
+};
 
 
 // Warnings were encountered during analysis:

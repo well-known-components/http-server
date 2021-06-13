@@ -29,7 +29,7 @@ export class Layer<Context, Path extends string> {
   name: string | null
   methods: http.HTTPMethod[]
   paramNames: Key[]
-  stack: Middleware<http.DefaultContext<Context>>[]
+  stack: Middleware<http.PathAwareContext<http.DefaultContext<Context>, Path>>[]
   path: string
   regexp: RegExp
 

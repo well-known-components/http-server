@@ -1,9 +1,10 @@
 import { createConfigComponent } from "@well-known-components/env-config-provider"
 import { createLogComponent } from "@well-known-components/logger"
 import { createRunner } from "@well-known-components/test-helpers"
-import nodeFetch from "node-fetch"
-import { createServerComponent, IFetchComponent } from "../src"
-import { TestComponents } from "./test-helpers"
+import nodeFetch, { RequestInit } from "node-fetch"
+import { createServerComponent, createStatusCheckComponent, IFetchComponent } from "../src"
+import { createMockedLifecycleComponent } from "./mockedLifecycleComponent"
+import { TestComponents, TestComponentsWithStatus } from "./test-helpers"
 
 let currentPort = 19000
 
@@ -13,6 +14,13 @@ export const describeE2E = createRunner<TestComponents>({
     await program.startComponents()
   },
   initComponents,
+})
+
+export const describeE2EWithStatusChecks = createRunner<TestComponentsWithStatus>({
+  async main(program) {
+    await program.startComponents()
+  },
+  initComponents: initComponentsWithStatus,
 })
 
 async function initComponents<C extends object>(): Promise<TestComponents> {
@@ -30,10 +38,27 @@ async function initComponents<C extends object>(): Promise<TestComponents> {
   const server = await createServerComponent<C>({ logs, config }, {})
 
   const fetch: IFetchComponent = {
-    async fetch(url, initRequest?) {
-      return nodeFetch(protocolHostAndProtocol + url, { ...initRequest })
+    async fetch(url: any, initRequest?: any) {
+      if (typeof url == "string" && url.startsWith("/")) {
+        return nodeFetch(protocolHostAndProtocol + url, { ...initRequest })
+      } else {
+        return nodeFetch(url, { ...initRequest })
+      }
     },
   }
 
   return { logs, config, server, fetch }
+}
+
+async function initComponentsWithStatus<C extends object>(): Promise<TestComponentsWithStatus> {
+  const components = await initComponents<C>()
+
+  const status = await createStatusCheckComponent({ server: components.server, config: components.config })
+
+  return {
+    ...components,
+    status,
+    database: createMockedLifecycleComponent(),
+    kafka: createMockedLifecycleComponent(),
+  }
 }

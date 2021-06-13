@@ -1,10 +1,8 @@
 import { createConfigComponent } from "@well-known-components/env-config-provider"
 import { createLogComponent } from "@well-known-components/logger"
 import { createRunner } from "@well-known-components/test-helpers"
-import { createTestServerComponent, IFetchComponent } from "../src"
+import { createStatusCheckComponent, createTestServerComponent, IFetchComponent } from "../src"
 import { TestComponents } from "./test-helpers"
-
-let currentPort = 19000
 
 // creates a "mocha-like" describe function to run tests using the test components
 export const describeTestE2E = createRunner<TestComponents>({

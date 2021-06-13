@@ -76,9 +76,6 @@ function createMethodHandler<Context>(
  * Basic usage:
  *
  * ```javascript
- * const Koa = require('koa');
- * const Router = require('@koa/router');
- *
  * const app = createTestServerComponent();
  * const router = new Router();
  *
@@ -96,8 +93,7 @@ function createMethodHandler<Context>(
 export class Router<Context extends {}> implements IHttpServerComponent.MethodHandlers<Context> {
   opts: RouterOptions
   methods: (IHttpServerComponent.HTTPMethod | string)[]
-  // params: Record<string, Middleware<http.DefaultContext<Context>>> = {}
-  stack: Layer<Context, string>[] = []
+  stack: Layer<Context, any>[] = []
   constructor(opts?: RouterOptions) {
     this.opts = opts || {}
     this.methods = this.opts?.methods?.map(($) => $.toUpperCase()) || [
@@ -160,7 +156,7 @@ export class Router<Context extends {}> implements IHttpServerComponent.MethodHa
     let router = this
 
     const hasPath = typeof middleware[0] === "string"
-    if (hasPath) path = (middleware.shift() as any) as string
+    if (hasPath) path = middleware.shift() as any as string
 
     for (let i = 0; i < middleware.length; i++) {
       const m = middleware[i]
@@ -221,47 +217,46 @@ export class Router<Context extends {}> implements IHttpServerComponent.MethodHa
   middleware(): IHttpServerComponent.IRequestHandler<Context> {
     const router = this
 
-    const routerMiddleware: IHttpServerComponent.IRequestHandler<
-      RoutedContext<Context, any>
-    > = function routerMiddleware(ctx, next) {
-      const path = router.opts.routerPath || ctx.routerPath || ctx.url.pathname
-      const matched = router.match(path, ctx.request.method)
-      let layerChain: Middleware<RoutedContext<IHttpServerComponent.DefaultContext<Context>, string>>[]
+    const routerMiddleware: IHttpServerComponent.IRequestHandler<RoutedContext<Context, any>> =
+      function routerMiddleware(ctx, next) {
+        const path = router.opts.routerPath || ctx.routerPath || ctx.url.pathname
+        const matched = router.match(path, ctx.request.method)
+        let layerChain: Middleware<RoutedContext<IHttpServerComponent.DefaultContext<Context>, string>>[]
 
-      if (ctx.matched) {
-        ctx.matched.push.apply(ctx.matched, matched.path)
-      } else {
-        ctx.matched = matched.path
+        if (ctx.matched) {
+          ctx.matched.push.apply(ctx.matched, matched.path)
+        } else {
+          ctx.matched = matched.path
+        }
+
+        ctx.router = router
+
+        if (!matched.route) return next()
+
+        const matchedLayers = matched.pathAndMethod
+        const mostSpecificLayer = matchedLayers[matchedLayers.length - 1]
+        ctx._matchedRoute = mostSpecificLayer.path
+        if (mostSpecificLayer.name) {
+          ctx._matchedRouteName = mostSpecificLayer.name
+        }
+
+        layerChain = matchedLayers.reduce(function (memo, layer) {
+          memo.push(async function (ctx, next) {
+            ctx.captures = layer.captures(path)
+            ctx.params = ctx.params = layer.params(ctx.captures, ctx.params)
+            ctx.routerPath = layer.path
+            // ctx.routerName = layer.name || undefined
+            ctx._matchedRoute = layer.path
+            if (layer.name) {
+              ctx._matchedRouteName = layer.name
+            }
+            return await next()
+          })
+          return memo.concat(layer.stack)
+        }, [] as typeof layerChain)
+
+        return compose(...layerChain)(ctx, next)
       }
-
-      ctx.router = router
-
-      if (!matched.route) return next()
-
-      const matchedLayers = matched.pathAndMethod
-      const mostSpecificLayer = matchedLayers[matchedLayers.length - 1]
-      ctx._matchedRoute = mostSpecificLayer.path
-      if (mostSpecificLayer.name) {
-        ctx._matchedRouteName = mostSpecificLayer.name
-      }
-
-      layerChain = matchedLayers.reduce(function (memo, layer) {
-        memo.push(async function (ctx, next) {
-          ctx.captures = layer.captures(path)
-          ctx.params = ctx.params = layer.params(ctx.captures, ctx.params)
-          ctx.routerPath = layer.path
-          // ctx.routerName = layer.name || undefined
-          ctx._matchedRoute = layer.path
-          if (layer.name) {
-            ctx._matchedRouteName = layer.name
-          }
-          return await next()
-        })
-        return memo.concat(layer.stack)
-      }, [] as typeof layerChain)
-
-      return compose(...layerChain)(ctx, next)
-    }
 
     setInjectedRouter(routerMiddleware, this)
 
@@ -276,9 +271,6 @@ export class Router<Context extends {}> implements IHttpServerComponent.MethodHa
    * @example
    *
    * ```javascript
-   * const Koa = require('koa');
-   * const Router = require('@koa/router');
-   *
    * const app = createTestServerComponent();
    * const router = new Router();
    *
@@ -289,8 +281,6 @@ export class Router<Context extends {}> implements IHttpServerComponent.MethodHa
    * **Example with [Boom](https://github.com/hapijs/boom)**
    *
    * ```javascript
-   * const Koa = require('koa');
-   * const Router = require('@koa/router');
    * const Boom = require('boom');
    *
    * const app = createTestServerComponent();
@@ -311,66 +301,66 @@ export class Router<Context extends {}> implements IHttpServerComponent.MethodHa
     options = options || {}
     const implemented = this.methods
 
-    const routerMiddleware: IHttpServerComponent.IRequestHandler<
-      RoutedContext<Context, any>
-    > = async function routerMiddleware(ctx, next) {
-      const response = await next()
+    const routerMiddleware: IHttpServerComponent.IRequestHandler<Context | RoutedContext<Context, any>> =
+      async function routerMiddleware(ctx, next) {
+        const response = await next()
 
-      const allowed: Partial<Record<string, string>> = {}
+        const allowed: Partial<Record<string, string>> = {}
 
-      if (!response.status || response.status === 404) {
-        if (ctx.matched) {
-          for (let i = 0; i < ctx.matched.length; i++) {
-            const route = ctx.matched[i]
-            for (let j = 0; j < route.methods.length; j++) {
-              const method = route.methods[j]
-              allowed[method] = method
+        if (!response.status || response.status === 404) {
+          if ("matched" in ctx && ctx.matched) {
+            for (let i = 0; i < ctx.matched.length; i++) {
+              const route = ctx.matched[i]
+              for (let j = 0; j < route.methods.length; j++) {
+                const method = route.methods[j]
+                allowed[method] = method
+              }
             }
           }
-        }
 
-        const allowedArr = Object.keys(allowed)
-        const currentMethod = ctx.request.method.toUpperCase()
+          const allowedArr = Object.keys(allowed)
+          const currentMethod = ctx.request.method.toUpperCase()
 
-        if (!~implemented.indexOf(currentMethod)) {
-          if (options.throw) {
-            let notImplementedThrowable =
-              typeof options.notImplemented === "function"
-                ? options.notImplemented() // set whatever the user returns from their function
-                : new HttpError.NotImplemented()
-
-            throw notImplementedThrowable
-          } else {
-            return {
-              status: 501,
-              headers: { Allow: allowedArr.join(", ") },
-            }
-          }
-        } else if (allowedArr.length) {
-          if (currentMethod === "OPTIONS") {
-            return {
-              status: 200,
-              headers: { Allow: allowedArr.join(", ") },
-            }
-          } else if (!allowed[currentMethod]) {
+          if (!~implemented.indexOf(currentMethod)) {
             if (options.throw) {
-              let notAllowedThrowable =
-                typeof options.methodNotAllowed === "function"
-                  ? options.methodNotAllowed() // set whatever the user returns from their function
-                  : new HttpError.MethodNotAllowed()
+              let notImplementedThrowable =
+                typeof options.notImplemented === "function"
+                  ? options.notImplemented() // set whatever the user returns from their function
+                  : new HttpError.NotImplemented()
 
-              throw notAllowedThrowable
+              throw notImplementedThrowable
             } else {
               return {
-                status: 405,
+                status: 501,
                 headers: { Allow: allowedArr.join(", ") },
+              }
+            }
+          } else if (allowedArr.length) {
+            if (currentMethod === "OPTIONS") {
+              return {
+                status: 200,
+                headers: { Allow: allowedArr.join(", ") },
+              }
+            } else if (!allowed[currentMethod]) {
+              if (options.throw) {
+                let notAllowedThrowable =
+                  typeof options.methodNotAllowed === "function"
+                    ? options.methodNotAllowed() // set whatever the user returns from their function
+                    : new HttpError.MethodNotAllowed()
+
+                throw notAllowedThrowable
+              } else {
+                return {
+                  status: 405,
+                  headers: { Allow: allowedArr.join(", ") },
+                }
               }
             }
           }
         }
+        return response
       }
-    }
-    return routerMiddleware
+    return routerMiddleware as IHttpServerComponent.IRequestHandler<Context>
   }
 
   /**
@@ -454,7 +444,7 @@ export class Router<Context extends {}> implements IHttpServerComponent.MethodHa
     }
 
     // create route
-    const route = new Layer(path, methods, middleware, {
+    const route = new Layer<Context, Path>(path, methods, middleware, {
       end: opts.end === false ? opts.end : true,
       name: opts.name,
       sensitive: opts.sensitive || this.opts.sensitive || false,

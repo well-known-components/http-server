@@ -14,7 +14,6 @@ build:
 
 test:
 	./node_modules/.bin/jest --forceExit --detectOpenHandles --coverage --verbose
-
 ci: | build test
 
 update-interfaces-next:
