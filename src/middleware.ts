@@ -30,7 +30,7 @@ export function compose<Ctx>(...middlewares: Middleware<Ctx>[]): Middleware<Ctx>
 
       if (!fn) return {} as http.IResponse
 
-      return await fn(context, dispatch.bind(null, i + 1))
+      return fn(context, dispatch.bind(null, i + 1))
     }
   }
 }
