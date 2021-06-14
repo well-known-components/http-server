@@ -77,7 +77,7 @@ export async function createStatusCheckComponent<Context extends object = {}>(co
 
     const content: StandardStatusResponse = {
       details: {},
-      status: results.some(($) => $ == false) ? "fail" : "pass",
+      status: results.some(($) => $ === false) ? "fail" : "pass",
     }
 
     for (let it of probes) {
