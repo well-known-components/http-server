@@ -51,7 +51,7 @@ describe("Layer", function () {
       const app = createTestServerComponent()
       const router = new Router()
       app.use(router.middleware())
-      const notexistHandle = undefined
+      const notexistHandle: any = undefined
       expect(function () {
         router.get("/foo", notexistHandle)
       }).toThrow("GET `/foo`: `middleware` must be a function, not `undefined`")
@@ -61,7 +61,7 @@ describe("Layer", function () {
   describe("Layer#param()", function () {
     it("composes middleware for param fn", async function () {
       const app = createTestServerComponent()
-      const router = new Router<{ user }>()
+      const router = new Router()
       const route = new Layer(
         "/users/:user",
         ["GET"],

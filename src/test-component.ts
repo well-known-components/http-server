@@ -25,25 +25,30 @@ export function createTestServerComponent<Context extends object = {}>(): ITestH
   const serverHandler = createServerHandler<Context>()
 
   const ret: ITestHttpServerComponent<Context> = {
-    async fetch(url, initRequest?) {
+    async fetch(url: any, initRequest?: any) {
       let req = url instanceof fetch.Request ? url : new fetch.Request(url, initRequest)
 
-      const hostname = req.hostname || req.headers.get("host") || "0.0.0.0"
+      const hostname = req.headers.get("X-Forwarded-Host") || req.headers.get("host") || "0.0.0.0"
       const protocol = "http"
 
       const newUrl = new URL(url, protocol + "://" + hostname)
       req = new fetch.Request(newUrl.toString(), req)
+      try {
+        const res = await serverHandler.processRequest(currentContext, req)
+        if (res.body instanceof Stream) {
+          // since we have no server and actual socket pipes, what we receive here
+          // is a readable stream that needs to be decoupled from it's original
+          // stream to ensure a consistent behavior with real servers
+          return new Promise<fetch.Response>((resolve, reject) => {
+            resolve(new fetch.Response(pipeline(res.body, new PassThrough(), reject), res))
+          })
+        }
 
-      const res = await serverHandler.processRequest(currentContext, req)
-      if (res.body instanceof Stream) {
-        // since we have no server and actual socket pipes, what we receive here
-        // is a readable stream that needs to be decoupled from it's original
-        // stream to ensure a consistent behavior with real servers
-        return new Promise<fetch.Response>((resolve, reject) => {
-          resolve(new fetch.Response(pipeline(res.body, new PassThrough(), reject), res))
-        })
+        return res
+      } catch (error) {
+        console.error(error)
+        return new fetch.Response("DEV-SERVER-ERROR: " + (error.stack || error.toString()), { status: 500 })
       }
-      return res
     },
     use: serverHandler.use,
     setContext(ctx) {

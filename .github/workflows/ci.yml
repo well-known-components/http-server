@@ -22,7 +22,7 @@ jobs:
       - name: build
         run:  make build
       - name: test
-        run:  make test
+        run:  make test bench
       - name: Publish
         uses: menduz/oddish-action@master
         with:

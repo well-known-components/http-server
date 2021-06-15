@@ -2,6 +2,8 @@ import * as fetch from "node-fetch"
 import { Stream } from "stream"
 import * as http from "http"
 import * as https from "https"
+import destroy from "destroy"
+import onFinished from "on-finished"
 import type * as ExpressModule from "express"
 import type { IHttpServerComponent } from "@well-known-components/interfaces"
 import type { IHttpServerOptions } from "./types"
@@ -26,7 +28,7 @@ const NAME = Symbol.toStringTag
  *
  * @internal
  */
-export const isBlob = (object): object is Blob => {
+export const isBlob = (object: any): object is Blob => {
   return (
     object !== null &&
     typeof object === "object" &&
@@ -57,15 +59,19 @@ export function success(data: fetch.Response, res: ExpressModule.Response) {
   if (Buffer.isBuffer(body)) {
     res.send(body)
   } else if (isBlob(body)) {
-    const blob = body as Blob
-    const stream = blob.stream()
-    if (stream.pipeTo) {
-      stream.pipeTo(res as any)
-    } else {
-      ;(blob.stream() as any).pipe(res)
-    }
+    // const blob = body as Blob
+    // const stream = blob.stream()
+    // if (stream.pipeTo) {
+    //   stream.pipeTo(res as any)
+    // } else {
+    //   ;(blob.stream() as any).pipe(res)
+    // }
+    throw new Error("Unknown response body (Blob)")
   } else if (body && body.pipe) {
     body.pipe(res)
+
+    // Note: for context about why this is necessary, check https://github.com/nodejs/node/issues/1180
+    onFinished(res, () => destroy(body))
   } else if (body !== undefined && body !== null) {
     console.dir(body)
     throw new Error("Unknown response body")
@@ -99,15 +105,15 @@ export const getRequestFromNodeMessage = <T extends http.IncomingMessage>(
 
   const requestInit: fetch.RequestInit = {
     headers: headers,
-    method: request.method.toUpperCase(),
+    method: request.method!.toUpperCase(),
   }
 
   if (requestInit.method != "GET" && requestInit.method != "HEAD") {
     requestInit.body = request
   }
 
-  const baseUrl = protocol + "://" + (headers.get("host") || host || "0.0.0.0")
-  const ret = new fetch.Request(new URL(request.url, baseUrl), requestInit)
+  const baseUrl = protocol + "://" + (headers.get("X-Forwarded-Host") || headers.get("host") || host || "0.0.0.0")
+  const ret = new fetch.Request(new URL(request.url!, baseUrl), requestInit)
 
   return ret
 }
@@ -195,9 +201,17 @@ export function normalizeResponseBody(
   request: IHttpServerComponent.IRequest,
   response: IHttpServerComponent.IResponse
 ): fetch.Response {
+  if (response instanceof fetch.Response) {
+    return new fetch.Response(response.body, {
+      headers: response.headers,
+      status: response.status,
+      statusText: response.statusText,
+    })
+  }
+
   if (!response) {
-    console.error("Warning, response received in normalizeResponseBody is nullish")
-    return new fetch.Response()
+    // Not Implemented
+    return new fetch.Response(undefined, { status: 501, statusText: "Server did not produce a valid response" })
   }
 
   const is1xx = response.status && response.status >= 100 && response.status < 200
@@ -221,7 +235,6 @@ export function normalizeResponseBody(
   } else if (typeof response.body == "string") {
     return respondString(response.body, response, mutableHeaders)
   } else if (response.body instanceof Stream) {
-    // TODO: test
     return new fetch.Response(response.body, response as fetch.ResponseInit)
   } else if (response.body != undefined) {
     // TODO: test

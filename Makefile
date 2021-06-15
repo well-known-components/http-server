@@ -14,8 +14,18 @@ build:
 
 test:
 	./node_modules/.bin/jest --forceExit --detectOpenHandles --coverage --verbose
-
 ci: | build test
+
+bench: build
+	@node --prof dist/benchmark.js &
+	@echo '> Initializing server...'
+	@sleep 5
+	# prewarm
+	ab -k -c 100 -n 100 http://0.0.0.0:5000/ping
+	# real benchmark
+	ab -k -c 100 -n 10000 http://0.0.0.0:5000/ping
+	@sleep 1
+	# node --prof-process isolate-0xnnnnnnnnnnnn-v8.log > processed.txt
 
 update-interfaces-next:
 	npm install @well-known-components/interfaces@next

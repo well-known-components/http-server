@@ -7,24 +7,18 @@
     {
       "type": "node",
       "request": "launch",
-      "name": "Mocha All",
-      "program": "${workspaceFolder}/node_modules/mocha/bin/_mocha",
+      "name": "Jest",
+      "program": "${workspaceFolder}/node_modules/jest/bin/jest.js",
       "runtimeArgs": [
-        "--async-stack-traces",
-        "--experimental-modules"
+        "--async-stack-traces"
       ],
       "args": [
-        "--timeout",
-        "999999",
-        "--colors"
+        "-i"
       ],
       "skipFiles": [
         "<node_internals>/**/*.js",
         "node_modules/**/*.js"
       ],
-      "env": {
-        "TS_NODE_PROJECT": "./test/tsconfig.json"
-      },
       "console": "integratedTerminal",
       "internalConsoleOptions": "neverOpen",
       "protocol": "inspector",

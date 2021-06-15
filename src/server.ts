@@ -137,11 +137,14 @@ export async function createServerComponent<Context extends object>(
 
   app.use((req, res) => {
     asyncHandle(req, res).catch((error) => {
+      logger.error("Unhandled error in http-server middlewares: " + error.message, {
+        url: req.url,
+        ip: req.ip,
+        method: req.method,
+        stack: error.stack || error.toString(),
+      })
       res.status(500)
       res.end()
-      // TODO: logger
-      logger.debug("error processing request", { url: req.url, method: req.method })
-      logger.error(error)
     })
   })
 

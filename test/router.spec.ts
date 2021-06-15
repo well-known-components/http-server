@@ -8,13 +8,14 @@ import expect from "expect"
 import { createTestServerComponent, Router } from "../src"
 import { Layer } from "../src/layer"
 import { methodsList } from "../src/methods"
-const methods = methodsList.map(($) => $.toLowerCase())
+import { IHttpServerComponent } from "@well-known-components/interfaces"
+const methods: Lowercase<IHttpServerComponent.HTTPMethod>[] = methodsList.map(($) => $.toLowerCase()) as any
 
 describe("Router", function () {
   it("shares context between routers (gh-205)", async function () {
     const app = createTestServerComponent()
-    const router1 = new Router<{ foo: any }>()
-    const router2 = new Router<{ baz: any; foo: any }>()
+    const router1 = new Router<{ foo?: any }>()
+    const router2 = new Router<{ baz?: any; foo?: any }>()
     router1.get("/", async function (ctx, next) {
       ctx.foo = "bar"
       return next()
@@ -32,8 +33,8 @@ describe("Router", function () {
 
   it("nested routes", async function () {
     const app = createTestServerComponent()
-    const parentRouter = new Router<{ n: number }>()
-    const nestedRouter = new Router<{ n: number }>()
+    const parentRouter = new Router<{ n?: number }>()
+    const nestedRouter = new Router<{ n?: number }>()
 
     parentRouter.use("/a", async function (ctx, next) {
       ctx.n = ctx.n ? ctx.n + 1 : 1
@@ -56,8 +57,8 @@ describe("Router", function () {
 
   it("does not register middleware more than once (gh-184)", async function () {
     const app = createTestServerComponent()
-    const parentRouter = new Router<{ n: number }>()
-    const nestedRouter = new Router<{ n: number }>()
+    const parentRouter = new Router<{ n?: number }>()
+    const nestedRouter = new Router<{ n?: number }>()
 
     nestedRouter.get("/first-nested-route", async function (ctx, next) {
       return { body: { n: ctx.n } }
@@ -269,7 +270,7 @@ describe("Router", function () {
 
   it("runs subrouter middleware after parent", async function () {
     const app = createTestServerComponent()
-    const subrouter = new Router<{ msg }>()
+    const subrouter = new Router<{ msg?: any }>()
     subrouter
       .use(function (ctx, next) {
         ctx.msg = "subrouter"
@@ -279,7 +280,7 @@ describe("Router", function () {
         return { body: { msg: ctx.msg } }
       })
 
-    const router = new Router<{ msg }>()
+    const router = new Router<{ msg?: any }>()
     router
       .use(function (ctx, next) {
         ctx.msg = "router"
@@ -297,11 +298,11 @@ describe("Router", function () {
 
   it("runs parent middleware for subrouter routes", async function () {
     const app = createTestServerComponent()
-    const subrouter = new Router<{ msg }>()
+    const subrouter = new Router<{ msg?: any }>()
     subrouter.get("/sub", async function (ctx) {
       return { body: { msg: ctx.msg } }
     })
-    const router = new Router<{ msg }>()
+    const router = new Router<{ msg?: any }>()
     router
       .use(function (ctx, next) {
         ctx.msg = "router"
@@ -383,7 +384,7 @@ describe("Router", function () {
 
   it("executes route middleware using `app.context`", async function () {
     const app = createTestServerComponent()
-    const router = new Router<{ bar; foo }>()
+    const router = new Router<{ bar?: any; foo?: any }>()
     app.use(router.middleware())
     router.use(function (ctx, next) {
       ctx.bar = "baz"
@@ -547,8 +548,8 @@ describe("Router#allowedMethods()", function () {
     expect(res.status).toEqual(405)
 
     // the 'Allow' header is not set when throwing
-    expect(res.headers["allow"]).toBeUndefined()
-    expect(res.headers["Allow"]).toBeUndefined()
+    expect(res.headers.get("allow")).toBeNull()
+    expect(res.headers.get("Allow")).toBeNull()
   })
 
   it('responds with user-provided throwable using the "throw" and "methodNotAllowed" options', async function () {
@@ -578,7 +579,7 @@ describe("Router#allowedMethods()", function () {
             otherStuff: true,
           }
           return notAllowedErr
-        },
+        } as any,
       })
     )
     router.get("/users", function (_, next) {
@@ -639,8 +640,8 @@ describe("Router#allowedMethods()", function () {
 
     // the 'Allow' header is not set when throwing
     // res.header.should.not.have.property("allow")
-    expect(res.headers["allow"]).toBeUndefined()
-    expect(res.headers["Allow"]).toBeUndefined()
+    expect(res.headers.get("allow")).toBeNull()
+    expect(res.headers.get("Allow")).toBeNull()
   })
 
   it('responds with user-provided throwable using the "throw" and "notImplemented" options', async function () {
@@ -674,7 +675,7 @@ describe("Router#allowedMethods()", function () {
             otherStuff: true,
           }
           return notImplementedErr
-        },
+        } as any,
       })
     )
     router.get("/users", function (_, next) {
@@ -731,7 +732,7 @@ it("allowedMethods check if flow (allowedArr.length)", async function () {
 })
 
 it("supports custom routing detect path: ctx.routerPath", async function () {
-  const app = createTestServerComponent<{ routerPath }>()
+  const app = createTestServerComponent<{ routerPath: string }>()
   const router = new Router()
   app.use(function (ctx, next) {
     // bind helloworld.example.com/users => example.com/helloworld/users
@@ -769,8 +770,8 @@ it("parameter added to request in ctx", async function () {
 
 it("parameter added to request in ctx with sub router", async function () {
   const app = createTestServerComponent()
-  const router = new Router<{ foo }>()
-  const subrouter = new Router<{ foo }>()
+  const router = new Router<{ foo?: any }>()
+  const subrouter = new Router<{ foo?: any }>()
 
   router.use(function (ctx, next) {
     ctx.foo = "boo"
@@ -875,7 +876,7 @@ describe("Router#[verb]()", function () {
 describe("Router#use()", function () {
   it("uses router middleware without path", async function () {
     const app = createTestServerComponent()
-    const router = new Router<{ foo }>()
+    const router = new Router<{ foo?: any }>()
 
     router.use(function (ctx, next) {
       ctx.foo = "baz"
@@ -904,7 +905,7 @@ describe("Router#use()", function () {
 
   it("uses router middleware at given path", async function () {
     const app = createTestServerComponent()
-    const router = new Router<{ foo }>()
+    const router = new Router<{ foo?: any }>()
 
     router.use("/foo/bar", async function (ctx, next) {
       ctx.foo = "foo"
@@ -928,8 +929,8 @@ describe("Router#use()", function () {
 
   it("runs router middleware before subrouter middleware", async function () {
     const app = createTestServerComponent()
-    const router = new Router<{ foo }>()
-    const subrouter = new Router<{ foo }>()
+    const router = new Router<{ foo?: any }>()
+    const subrouter = new Router<{ foo?: any }>()
 
     router.use(function (ctx, next) {
       ctx.foo = "boo"
@@ -959,7 +960,7 @@ describe("Router#use()", function () {
 
   it("assigns middleware to array of paths", async function () {
     const app = createTestServerComponent()
-    const router = new Router<{ foo; bar }>()
+    const router = new Router<{ foo?: any; bar?: any }>()
 
     router.use("/foo", async function (ctx, next) {
       ctx.foo = "foo"
@@ -1050,8 +1051,8 @@ it("does not add an erroneous (.*) to unprefiexed nested routers - gh-369 gh-410
 
 it("assigns middleware to array of paths with function middleware and router need to nest. - gh-22", async function () {
   const app = createTestServerComponent()
-  const base = new Router<{ foo; bar }>({ prefix: "/api" })
-  const nested = new Router<{ foo; bar }>({ prefix: "/qux" })
+  const base = new Router<{ foo?: any; bar?: any }>({ prefix: "/api" })
+  const nested = new Router<{ foo?: any; bar?: any }>({ prefix: "/qux" })
   const pathList = ["/foo", "/bar"]
 
   nested.get("/baz", async (ctx) => {
@@ -1089,8 +1090,8 @@ it("assigns middleware to array of paths with function middleware and router nee
 })
 it("uses a same router middleware at given paths continuously - ZijianHe/koa-router#gh-244 gh-18", async function () {
   const app = createTestServerComponent()
-  const base = new Router<{ foo; bar }>({ prefix: "/api" })
-  const nested = new Router<{ foo; bar }>({ prefix: "/qux" })
+  const base = new Router<{ foo?: any; bar?: any }>({ prefix: "/api" })
+  const nested = new Router<{ foo?: any; bar?: any }>({ prefix: "/qux" })
 
   nested.get("/baz", async (ctx) => {
     return {
@@ -1274,16 +1275,17 @@ describe("Router#register()", function () {
         const app = createTestServerComponent()
         const router = new Router()
         let middlewareCount = 0
-        const middlewareA = function (ctx, next) {
-          middlewareCount++
-          return next()
-        }
-        const middlewareB = function (ctx, next) {
-          middlewareCount++
-          return next()
-        }
 
-        router.use(middlewareA, middlewareB)
+        router.use(
+          function middlewareA(ctx, next) {
+            middlewareCount++
+            return next()
+          },
+          function middlewareB(ctx, next) {
+            middlewareCount++
+            return next()
+          }
+        )
         router.get("/users/:id", async function (ctx) {
           expect(ctx.params).toHaveProperty("id")
           return { body: { hello: "world" } }
@@ -1305,13 +1307,12 @@ describe("Router#register()", function () {
       it("places a `_matchedRoute` value on context", async function () {
         const app = createTestServerComponent()
         const router = new Router()
-        const middleware = async function (ctx, next) {
+
+        router.use(async function middleware(ctx, next) {
           await next()
           expect(ctx._matchedRoute).toEqual("/users/:id")
           return {}
-        }
-
-        router.use(middleware)
+        })
 
         router.get("/users/:id", async function (ctx, next) {
           expect(ctx._matchedRoute).toEqual("/users/:id")
@@ -1497,13 +1498,13 @@ describe("Router#register()", function () {
       describe("with trailing slash", testPrefix("/admin/"))
       describe("without trailing slash", testPrefix("/admin"))
 
-      function testPrefix(prefix) {
+      function testPrefix(prefix: string) {
         return function () {
           const app = createTestServerComponent()
           let middlewareCount = 0
 
           beforeAll(function () {
-            const router = new Router<{ thing }>()
+            const router = new Router<{ thing?: any }>()
 
             router.use(function (ctx, next) {
               middlewareCount++

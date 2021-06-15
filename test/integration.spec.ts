@@ -1,16 +1,201 @@
 import expect from "expect"
 import { Stream } from "stream"
-import { Router } from "../src"
+import { createReadStream, readFileSync } from "fs"
+import { getUnderlyingServer, Router } from "../src"
 import { describeE2E } from "./test-e2e-express-server"
 import { describeTestE2E } from "./test-e2e-test-server"
 import { TestComponents } from "./test-helpers"
 import FormData = require("form-data")
 import busboy from "busboy"
+import { inspect } from "util"
+import nodeFetch from "node-fetch"
 
 describeE2E("integration sanity tests using express server backend", integrationSuite)
 describeTestE2E("integration sanity tests using test server", integrationSuite)
 
+describeE2E("underlying server", function ({ components }: { components: TestComponents }) {
+  it("gets the underlying http server", async () => {
+    const { server } = components
+    const http = await getUnderlyingServer(server)
+    expect(http.listening).toEqual(true)
+  })
+})
+
+describeTestE2E("underlying server", function ({ components }: { components: TestComponents }) {
+  it("gets the underlying http server", async () => {
+    const { server } = components
+    const http = getUnderlyingServer(server)
+    await expect(http).rejects.toThrow()
+  })
+})
+
 function integrationSuite({ components }: { components: TestComponents }) {
+  it("empty server returns 404", async () => {
+    const { fetch, server } = components
+    server.resetMiddlewares()
+
+    const res = await fetch.fetch(`/`)
+    expect(res.status).toEqual(404)
+  })
+
+  it("bypass middleware returns 404", async () => {
+    const { fetch, server } = components
+    server.resetMiddlewares()
+    server.use((_, next) => next())
+    const res = await fetch.fetch(`/unexistent-route`)
+    expect(res.status).toEqual(404)
+  })
+
+  it("empty return middleware returns 501", async () => {
+    const { fetch, server } = components
+    server.resetMiddlewares()
+    server.use(async () => {
+      return null as any
+    })
+    const res = await fetch.fetch(`/`)
+    expect(res.status).toEqual(501)
+  })
+
+  it("url must use X-Forwarded-Host if available", async () => {
+    const { fetch, server } = components
+    server.resetMiddlewares()
+    server.use(async (ctx) => {
+      return { body: ctx.url.toString() }
+    })
+    const res = await fetch.fetch(`/test?a=true`, {
+      headers: { "X-Forwarded-Host": "google.com", host: "arduz.com.ar" },
+    })
+    const url = await res.text()
+    expect(url).toEqual("http://google.com/test?a=true")
+  })
+
+  it("url must use host if available", async () => {
+    const { fetch, server } = components
+    server.resetMiddlewares()
+    server.use(async (ctx) => {
+      return { body: ctx.url.toString() }
+    })
+    const res = await fetch.fetch(`/test?a=true`, { headers: { host: "arduz.com.ar" } })
+    const url = await res.text()
+    expect(url).toEqual("http://arduz.com.ar/test?a=true")
+  })
+
+  it("calling multiple next fails", async () => {
+    const { fetch, server } = components
+    server.resetMiddlewares()
+    server.use(async (_, next) => {
+      next()
+      return next()
+    })
+    const res = await fetch.fetch(`/`)
+    expect(res.status).toEqual(500)
+  })
+
+  it("calling multiple next if there is no next returns 404", async () => {
+    const { fetch, server } = components
+    server.resetMiddlewares()
+    server.use(async (_, next) => {
+      return next()
+    })
+    const res = await fetch.fetch(`/`)
+    expect(res.status).toEqual(404)
+  })
+
+  it("unmatched routes return 501", async () => {
+    const { fetch, server } = components
+    server.resetMiddlewares()
+    const routes = new Router()
+    server.use(routes.middleware())
+    server.use(routes.allowedMethods())
+    const res = await fetch.fetch(`/unexistent-route`)
+    expect(res.status).toEqual(404)
+  })
+
+  it("context is passed to handlers", async () => {
+    const { fetch, server } = components
+    server.resetMiddlewares()
+    server.setContext({ a: { value: "test" } })
+    server.use(async (ctx) => {
+      return { body: { value: (ctx as any).a.value, isStillInjectingHttpContext: !!ctx.url } }
+    })
+    const res = await fetch.fetch(`/`)
+    expect(await res.json()).toEqual({ value: "test", isStillInjectingHttpContext: true })
+  })
+
+  it("return fetch should be legal google.com", async () => {
+    const { fetch, server } = components
+    server.resetMiddlewares()
+    server.use(async (ctx) => {
+      const googlePromise = await nodeFetch("https://google.com", {
+        compress: false,
+      })
+      return googlePromise as any
+    })
+
+    const res = await fetch.fetch(`/`)
+    // console.log("res " + inspect(res, false, 3, true))
+    expect(res.ok).toEqual(true)
+    expect(res.headers.get("alt-svc")).not.toBeNull()
+    const text = await res.text()
+    expect(text).toMatch("goog")
+  })
+
+  it("return readStream of file can be piped as text", async () => {
+    const { fetch, server } = components
+    server.resetMiddlewares()
+    const stream = createReadStream(__filename)
+    server.use(async () => {
+      return { body: stream }
+    })
+    expect(stream.destroyed).toEqual(false)
+    const res = await fetch.fetch(`/`)
+    expect(res.ok).toEqual(true)
+    // TODO: this should be handled by node-fetch, lazy consuming the body of the request,
+    // but it doesn't happen, it automatically receives the whole stream and tries to fit
+    // it into memory
+    // =>    expect(stream.destroyed).toEqual(false)
+    expect(await res.text()).toEqual(readFileSync(__filename).toString())
+    expect(stream.destroyed).toEqual(true)
+  })
+
+  it("return Buffer works", async () => {
+    const { fetch, server } = components
+    server.resetMiddlewares()
+    server.use(async () => {
+      return { body: Buffer.from([33, 22, 33]) }
+    })
+    const res = await fetch.fetch(`/`)
+    expect(res.ok).toEqual(true)
+    expect(await res.buffer()).toEqual(Buffer.from([33, 22, 33]))
+  })
+
+  it("return Uint8Array works", async () => {
+    const { fetch, server } = components
+    server.resetMiddlewares()
+    server.use(async () => {
+      return { body: Uint8Array.from([33, 22, 33]) }
+    })
+    const res = await fetch.fetch(`/`)
+    expect(res.ok).toEqual(true)
+    expect(new Uint8Array(await res.arrayBuffer())).toEqual(Uint8Array.from([33, 22, 33]))
+  })
+
+  it("return ArrayBuffer works", async () => {
+    const { fetch, server } = components
+    server.resetMiddlewares()
+    const body = new ArrayBuffer(3)
+    const view = new Uint8Array(body)
+    view[0] = 33
+    view[1] = 22
+    view[2] = 66
+    server.use(async () => {
+      return { body: body }
+    })
+    const res = await fetch.fetch(`/`)
+    expect(res.ok).toEqual(true)
+    expect(new Uint8Array(await res.arrayBuffer())).toEqual(Uint8Array.from([33, 22, 66]))
+  })
+
   it("returns a stream", async () => {
     const { fetch, server } = components
     server.resetMiddlewares()
@@ -130,7 +315,7 @@ function integrationSuite({ components }: { components: TestComponents }) {
     const routes = new Router()
 
     routes.get("/users/:user", async (ctx) => ({
-      body: ctx.request.headers.get("x-a"),
+      body: ctx.request.headers.get("x-a") as any,
     }))
 
     server.use(routes.middleware())

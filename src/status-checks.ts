@@ -1,5 +1,33 @@
-import { IBaseComponent, IHttpServerComponent, IStatusCheckCapableComponent } from "@well-known-components/interfaces"
+import {
+  IBaseComponent,
+  IConfigComponent,
+  IHttpServerComponent,
+  IStatusCheckCapableComponent,
+} from "@well-known-components/interfaces"
 import { Router } from "./router"
+
+/**
+ * @beta
+ */
+export type StandardStatusResponse = {
+  status: "pass" | "fail" | "warn"
+  version?: string
+  releaseId?: string
+  notes?: string[]
+  output?: string
+  serviceId?: string
+  description?: string
+  details: Record<string, StandardStatusResponseDetail>
+}
+
+/**
+ * @beta
+ */
+export type StandardStatusResponseDetail = {
+  status: "pass" | "fail" | "warn"
+  componentType?: string
+  componentId?: string
+}
 
 /**
  * Binds status checks to the server
@@ -10,12 +38,56 @@ import { Router } from "./router"
  */
 export async function createStatusCheckComponent<Context extends object = {}>(components: {
   server: IHttpServerComponent<Context>
+  config: IConfigComponent
 }): Promise<IBaseComponent> {
   const { server } = components
 
   let mutStartOptions: IBaseComponent.ComponentStartOptions | undefined
 
   const routes = new Router()
+
+  const SUCCESSFUL_STATUS = 200
+  const FAILED_STATUS = 503
+  const MIME = "application/health+json; charset=utf-8"
+
+  async function getDetails(startup: boolean): Promise<StandardStatusResponse | null> {
+    if (!mutStartOptions) {
+      return null
+    }
+    const components: Record<string, IStatusCheckCapableComponent> = mutStartOptions.getComponents()
+
+    const probes: { name: string; promise: Promise<boolean> }[] = []
+
+    let functionName: "startupProbe" | "readynessProbe" = startup ? "startupProbe" : "readynessProbe"
+
+    for (let c in components) {
+      if (typeof components[c][functionName] == "function") {
+        probes.push({
+          name: c,
+          promise: new Promise((ok) => {
+            components[c][functionName]!()
+              .then(ok)
+              .catch(() => ok(false))
+          }),
+        })
+      }
+    }
+
+    const results = await Promise.all(probes.map(($) => $.promise))
+
+    const content: StandardStatusResponse = {
+      details: {},
+      status: results.some(($) => $ === false) ? "fail" : "pass",
+    }
+
+    for (let it of probes) {
+      content.details[it.name] = {
+        status: (await it.promise) ? "pass" : "fail",
+      }
+    }
+
+    return content
+  }
 
   /**
    * Readiness probes indicate whether your application is ready to
@@ -26,16 +98,42 @@ export async function createStatusCheckComponent<Context extends object = {}>(co
    * associated service's "pool" of pods that are handling requests,
    * by marking the pod as "Unready".
    */
-  routes.get("/health/ready", async (ctx) => {
+  routes.get("/health/ready", async () => {
     if (!mutStartOptions) {
-      return { body: "initializing", status: 400 }
+      return {
+        body: { status: "initializing" },
+        status: FAILED_STATUS,
+        headers: {
+          "content-type": MIME,
+        },
+      }
     }
     if (mutStartOptions.started()) {
-      return { body: "ready", status: 200 }
+      const content: StandardStatusResponse = (await getDetails(false))!
+
+      return {
+        status: content.status == "pass" ? SUCCESSFUL_STATUS : FAILED_STATUS,
+        body: content,
+        headers: {
+          "content-type": MIME,
+        },
+      }
     } else if (mutStartOptions.live()) {
-      return { body: "unready", status: 400 }
+      return {
+        body: "unready",
+        status: FAILED_STATUS,
+        headers: {
+          "content-type": MIME,
+        },
+      }
     }
-    return { body: "waiting", status: 400 }
+    return {
+      body: "waiting",
+      status: FAILED_STATUS,
+      headers: {
+        "content-type": MIME,
+      },
+    }
   })
 
   /**
@@ -50,37 +148,35 @@ export async function createStatusCheckComponent<Context extends object = {}>(co
    */
   routes.get("/health/startup", async () => {
     if (!mutStartOptions) {
-      return { body: "bootstrapping", status: 400 }
+      return {
+        body: {
+          status: "bootstrapping",
+        },
+        headers: {
+          "content-type": MIME,
+        },
+        status: FAILED_STATUS,
+      }
     } else if (!mutStartOptions.started()) {
-      return { body: "starting", status: 400 }
-    }
-
-    const components: Record<string, IStatusCheckCapableComponent> = mutStartOptions.getComponents()
-
-    const probes: { name: string; promise: Promise<boolean> }[] = []
-
-    for (let c in components) {
-      if (typeof components[c].startupProbe == "function") {
-        probes.push({
-          name: c,
-          promise: new Promise((ok) => {
-            components[c].startupProbe!()
-              .then(ok)
-              .catch(() => ok(false))
-          }),
-        })
+      return {
+        body: {
+          status: "starting",
+        },
+        headers: {
+          "content-type": MIME,
+        },
+        status: FAILED_STATUS,
       }
     }
 
-    const results = await Promise.all(probes.map(($) => $.promise))
-
-    const content = probes
-      .map((content, index) => ("[" + content.name + "] " + results[index] ? "ok" : "not-ok"))
-      .join("\n")
+    const content: StandardStatusResponse = (await getDetails(true))!
 
     return {
-      status: results.some(($) => $ == false) ? 400 : 200,
+      status: content.status == "pass" ? SUCCESSFUL_STATUS : FAILED_STATUS,
       body: content,
+      headers: {
+        "content-type": MIME,
+      },
     }
   })
 
@@ -90,7 +186,7 @@ export async function createStatusCheckComponent<Context extends object = {}>(co
    * probe, Kubernetes will kill the pod and restart another.
    */
   routes.get("/health/live", async () => {
-    return { status: 200, body: "alive" }
+    return { status: SUCCESSFUL_STATUS, body: "alive" }
   })
 
   const middleware = routes.middleware()
@@ -98,6 +194,7 @@ export async function createStatusCheckComponent<Context extends object = {}>(co
 
   return {
     async start(opt) {
+      process.stderr.write("START CALLED")
       mutStartOptions = opt
     },
   }
