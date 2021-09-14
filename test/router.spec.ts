@@ -112,7 +112,7 @@ describe("Router", function () {
     const res = await app.fetch("/double")
     expect(res.status).toEqual(200)
 
-    expect((await res.json()).message).toEqual("Hello World!")
+    expect((await res.json() as any).message).toEqual("Hello World!")
   })
 
   it("supports promises for async/await", async function () {
@@ -433,7 +433,8 @@ it("supports promises for route middleware", async function () {
   app.use(router.middleware())
   const readVersion = function () {
     return new Promise(function (resolve, reject) {
-      const packagePath = path.join(__dirname, "..", "package.json")
+      // const packagePath = path.join(import.meta.url, "..", "..", "package.json").replace(/^file:/, '')
+      const packagePath = path.join(__dirname, "..", "package.json").replace(/^file:/, '')
       fs.readFile(packagePath, "utf8", function (err, data) {
         if (err) return reject(err)
         resolve(JSON.parse(data).version)
@@ -527,7 +528,7 @@ describe("Router#allowedMethods()", function () {
     app.use(async function (ctx, next) {
       try {
         return await next()
-      } catch (err) {
+      } catch (err: any) {
         // assert that the correct HTTPError was thrown
         expect(err.name).toEqual("MethodNotAllowedError")
         expect(err.status).toEqual(405)
@@ -559,7 +560,7 @@ describe("Router#allowedMethods()", function () {
     app.use(async function (ctx, next) {
       try {
         return await next()
-      } catch (err) {
+      } catch (err: any) {
         // assert that the correct HTTPError was thrown
         expect(err.message).toEqual("Custom Not Allowed Error")
         expect(err.status).toEqual(405)
@@ -621,7 +622,7 @@ describe("Router#allowedMethods()", function () {
     app.use(async function (ctx, next) {
       try {
         return next()
-      } catch (err) {
+      } catch (err: any) {
         // assert that the correct HTTPError was thrown
         expect(err.name).toEqual("NotImplementedError")
         expect(err.status).toEqual(501)
@@ -651,7 +652,7 @@ describe("Router#allowedMethods()", function () {
     app.use(async function (ctx, next) {
       try {
         return next()
-      } catch (err) {
+      } catch (err: any) {
         // assert that our custom error was thrown
         expect(err.message).toEqual("Custom Not Implemented Error")
         expect(err.type).toEqual("custom")
@@ -757,7 +758,7 @@ it("parameter added to request in ctx", async function () {
     try {
       expect(ctx.params.saying).toEqual("helloWorld")
       return { body: { echo: ctx.params.saying } }
-    } catch (err) {
+    } catch (err: any) {
       return { status: 500, body: err.message }
     }
   })
@@ -782,7 +783,7 @@ it("parameter added to request in ctx with sub router", async function () {
     try {
       expect(ctx.params.saying).toEqual("helloWorld")
       return { body: { echo: ctx.params.saying } }
-    } catch (err) {
+    } catch (err: any) {
       return { status: 500, body: err.message }
     }
   })
@@ -868,7 +869,7 @@ describe("Router#[verb]()", function () {
     app.use(router.middleware())
     const res = await app.fetch("/notparameter")
     expect(res.status).toEqual(200)
-    const b = await res.json()
+    const b: any = await res.json()
     expect(b.param).toEqual(undefined)
   })
 })
@@ -1224,7 +1225,7 @@ describe("Router#register()", function () {
         const res = await app.fetch("/things/1/list")
         expect(res.status).toEqual(200)
 
-        expect((await res.json()).thing_id).toEqual("1")
+        expect((await res.json() as any).thing_id).toEqual("1")
       })
 
       it("responds with 404 when has a trailing slash", async function () {

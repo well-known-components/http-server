@@ -1,13 +1,15 @@
+// export default {
 module.exports = {
   globals: {
     "ts-jest": {
       tsconfig: "test/tsconfig.json",
+      useESM: true
     },
   },
   moduleFileExtensions: ["ts", "js"],
-  transform: {
-    "^.+\\.(ts|tsx)$": "ts-jest",
-  },
+  // extensionsToTreatAsEsm: [".ts"],
+  // preset: "ts-jest/presets/default-esm",
+  preset: "ts-jest",
   coverageDirectory: "coverage",
   collectCoverageFrom: ["src/**/*.ts", "src/**/*.js"],
   testMatch: ["**/*.spec.(ts)"],

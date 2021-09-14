@@ -1,7 +1,6 @@
 import cors from "cors"
 import compression from "compression"
 import express from "express"
-import future from "fp-future"
 import type * as ExpressModule from "express"
 import type {
   IBaseComponent,
@@ -14,6 +13,7 @@ import type { ServerComponents, IHttpServerOptions } from "./types"
 import { IncomingMessage } from "http"
 import { createServerHandler } from "./server-handler"
 import * as https from "https"
+import { createServerTerminator } from "./terminator"
 
 /**
  * @public
@@ -62,8 +62,11 @@ export async function createServerComponent<Context extends object>(
 
   let listen: Promise<typeof server> | undefined
 
+  const terminator = createServerTerminator(server, { logger }, {})
+
   async function start(): Promise<void> {
     if (listen) {
+      logger.error("start() called more than once")
       await listen
       return
     }
@@ -74,34 +77,20 @@ export async function createServerComponent<Context extends object>(
         reject(err)
       }
 
-      server
-        .listen(port, host, () => {
-          logger.log(`Listening ${host}:${port}`)
-          resolve(server)
-          server!.off("error", errorHandler)
-        })
-        .once("error", errorHandler)
+      server.once("error", errorHandler).listen(port, host, () => {
+        logger.log(`Listening ${host}:${port}`)
+        resolve(server)
+        server!.off("error", errorHandler)
+      })
     })
 
     await listen
   }
 
   async function stop() {
-    if (listen) {
-      logger.log(`Closing server`)
-      if (server && server.listening) {
-        const awaitable = future()
-        server.close((err) => {
-          if (err) {
-            awaitable.reject(err)
-          } else {
-            awaitable.resolve(null)
-          }
-          listen = undefined
-        })
-        return awaitable
-      }
-    }
+    logger.info(`Closing server`)
+    await terminator.terminate()
+    logger.info(`Server closed`)
   }
 
   let configuredContext: Context = Object.create({})

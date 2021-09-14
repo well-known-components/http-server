@@ -27,7 +27,7 @@ async function initComponents<C extends object>(): Promise<TestComponents> {
   const logs = createLogComponent()
 
   const config = createConfigComponent({
-    HTTP_SERVER_PORT: currentPort + 1,
+    HTTP_SERVER_PORT: (currentPort += 1).toString(),
     HTTP_SERVER_HOST: "0.0.0.0",
   })
 
