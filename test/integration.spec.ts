@@ -5,9 +5,8 @@ import { getUnderlyingServer, Router } from "../src"
 import { describeE2E } from "./test-e2e-express-server"
 import { describeTestE2E } from "./test-e2e-test-server"
 import { TestComponents } from "./test-helpers"
-import FormData = require("form-data")
+import FormData from "form-data"
 import busboy from "busboy"
-import { inspect } from "util"
 import nodeFetch from "node-fetch"
 
 describeE2E("integration sanity tests using express server backend", integrationSuite)
@@ -143,6 +142,7 @@ function integrationSuite({ components }: { components: TestComponents }) {
   it("return readStream of file can be piped as text", async () => {
     const { fetch, server } = components
     server.resetMiddlewares()
+    // const stream = createReadStream(import.meta.url.replace('file://', ''))
     const stream = createReadStream(__filename)
     server.use(async () => {
       return { body: stream }
@@ -154,6 +154,7 @@ function integrationSuite({ components }: { components: TestComponents }) {
     // but it doesn't happen, it automatically receives the whole stream and tries to fit
     // it into memory
     // =>    expect(stream.destroyed).toEqual(false)
+    // expect(await res.text()).toEqual(readFileSync(import.meta.url.replace('file://', '')).toString())
     expect(await res.text()).toEqual(readFileSync(__filename).toString())
     expect(stream.destroyed).toEqual(true)
   })

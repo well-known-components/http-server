@@ -54,7 +54,7 @@ export function success(data: fetch.Response, res: ExpressModule.Response) {
     })
   }
 
-  const body: Buffer | Stream | Blob = data.body
+  const body = data.body
 
   if (Buffer.isBuffer(body)) {
     res.send(body)
@@ -113,7 +113,7 @@ export const getRequestFromNodeMessage = <T extends http.IncomingMessage>(
   }
 
   const baseUrl = protocol + "://" + (headers.get("X-Forwarded-Host") || headers.get("host") || host || "0.0.0.0")
-  const ret = new fetch.Request(new URL(request.url!, baseUrl), requestInit)
+  const ret = new fetch.Request(new URL(request.url!, baseUrl).toString(), requestInit)
 
   return ret
 }
@@ -121,7 +121,7 @@ export const getRequestFromNodeMessage = <T extends http.IncomingMessage>(
 export const coerceErrorsMiddleware: Middleware<any> = async (_, next) => {
   try {
     return await next()
-  } catch (e) {
+  } catch (e: any) {
     if (
       e instanceof HttpError ||
       (("status" in e || "statusCode" in e) && (typeof e.status == "number" || typeof e.statusCode == "number"))
@@ -226,7 +226,7 @@ export function normalizeResponseBody(
     return new fetch.Response(undefined, { ...response, body: undefined } as any)
   }
 
-  const mutableHeaders = new fetch.Headers(response.headers as fetch.HeaderInit)
+  const mutableHeaders = new fetch.Headers(response.headers as fetch.HeadersInit)
 
   if (Buffer.isBuffer(response.body)) {
     return respondBuffer(response.body, response, mutableHeaders)

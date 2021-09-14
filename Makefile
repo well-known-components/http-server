@@ -14,7 +14,11 @@ build:
 
 test:
 	./node_modules/.bin/jest --forceExit --detectOpenHandles --coverage --verbose
-ci: | build test
+
+test-esm:
+	node --experimental-vm-modules ./node_modules/.bin/jest --forceExit --detectOpenHandles --coverage --verbose
+
+ci: | build test test-esm
 
 bench: build
 	@node --prof dist/benchmark.js &

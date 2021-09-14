@@ -26,13 +26,18 @@ export function createTestServerComponent<Context extends object = {}>(): ITestH
 
   const ret: ITestHttpServerComponent<Context> = {
     async fetch(url: any, initRequest?: any) {
-      let req = url instanceof fetch.Request ? url : new fetch.Request(url, initRequest)
+      let req: fetch.Request
 
-      const hostname = req.headers.get("X-Forwarded-Host") || req.headers.get("host") || "0.0.0.0"
-      const protocol = "http"
+      if (url instanceof fetch.Request) {
+        req = url
+      } else {
+        const tempHeaders = new fetch.Headers(initRequest?.headers)
+        const hostname = tempHeaders.get("X-Forwarded-Host") || tempHeaders.get("host") || "0.0.0.0"
+        const protocol = "http"
+        const newUrl = new URL(url, protocol + "://" + hostname)
+        req = new fetch.Request(newUrl.toString(), initRequest)
+      }
 
-      const newUrl = new URL(url, protocol + "://" + hostname)
-      req = new fetch.Request(newUrl.toString(), req)
       try {
         const res = await serverHandler.processRequest(currentContext, req)
         if (res.body instanceof Stream) {
@@ -40,12 +45,12 @@ export function createTestServerComponent<Context extends object = {}>(): ITestH
           // is a readable stream that needs to be decoupled from it's original
           // stream to ensure a consistent behavior with real servers
           return new Promise<fetch.Response>((resolve, reject) => {
-            resolve(new fetch.Response(pipeline(res.body, new PassThrough(), reject), res))
+            resolve(new fetch.Response(pipeline(res.body!, new PassThrough(), reject), res))
           })
         }
 
         return res
-      } catch (error) {
+      } catch (error: any) {
         console.error(error)
         return new fetch.Response("DEV-SERVER-ERROR: " + (error.stack || error.toString()), { status: 500 })
       }

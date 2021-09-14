@@ -17,10 +17,7 @@ export type LayerOptions = Partial<{
  * @param path - Path string or regular expression.
  * @param methods - Array of HTTP verbs.
  * @param middleware - Layer callback/middleware or series of.
- * @param opts -
- * @param opts.name - route name
- * @param opts.sensitive - case sensitive (default: false)
- * @param opts.strict - require the trailing slash (default: false)
+ * @param opts - Layer options
  *
  * @public
  */

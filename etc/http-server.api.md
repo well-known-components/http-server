@@ -4,6 +4,8 @@
 
 ```ts
 
+/// <reference types="node" />
+
 import type { CompressionOptions } from 'compression';
 import type { CorsOptions } from 'cors';
 import * as fetch_2 from 'node-fetch';
@@ -159,7 +161,6 @@ export type StandardStatusResponseDetail = {
     componentType?: string;
     componentId?: string;
 };
-
 
 // Warnings were encountered during analysis:
 //
