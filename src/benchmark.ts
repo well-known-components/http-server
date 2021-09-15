@@ -4,6 +4,7 @@ import { IConfigComponent, IHttpServerComponent, ILoggerComponent, Lifecycle } f
 import { createConfigComponent } from "@well-known-components/env-config-provider"
 import { createServerComponent } from "./index"
 import { createLogComponent } from "@well-known-components/logger"
+import { readFileSync } from "fs"
 
 // Record of components
 type Components = {
@@ -41,11 +42,45 @@ async function main({ components, startComponents, stop }: Lifecycle.EntryPointP
 
   let counter = 0
 
+  const staticBuffer = Buffer.from(new Array(10000).fill(0).map(() => Math.floor(Math.random() * 256)))
+  const staticArrayBuffer = new Uint8Array(staticBuffer)
+  const packageJsonString = readFileSync("package.json").toString()
+  const packageJson = JSON.parse(packageJsonString)
+
+  const TOTAL_REQUESTS = 10100
+  const TOTAL_STAGES = 5
+
   components.server.use(async function handler(ctx) {
     counter++
-    if (counter >= 10100) {
+    if (counter >= TOTAL_REQUESTS) {
       setTimeout(() => stop().catch(console.log), 0)
     }
+
+    const stage = Math.floor((counter / TOTAL_REQUESTS) * TOTAL_STAGES)
+
+    switch (stage) {
+      case 1:
+        return {
+          status: 200,
+          body: staticBuffer,
+        }
+      case 2:
+        return {
+          status: 200,
+          body: staticArrayBuffer,
+        }
+      case 3:
+        return {
+          status: 200,
+          body: packageJsonString,
+        }
+      case 4:
+        return {
+          status: 200,
+          body: packageJson,
+        }
+    }
+
     // Respond hello world
     return {
       status: 200,

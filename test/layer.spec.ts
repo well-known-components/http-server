@@ -1,7 +1,6 @@
 import { createTestServerComponent } from "../src"
 import { Layer } from "../src/layer"
 import { Router } from "../src/router"
-import expect from "expect"
 
 describe("Layer", function () {
   it("composes multiple callbacks/middlware", async function () {

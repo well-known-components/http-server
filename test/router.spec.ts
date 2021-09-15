@@ -4,7 +4,6 @@
 import HttpError from "http-errors"
 import fs from "fs"
 import path from "path"
-import expect from "expect"
 import { createTestServerComponent, Router } from "../src"
 import { Layer } from "../src/layer"
 import { methodsList } from "../src/methods"

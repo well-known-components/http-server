@@ -27,7 +27,7 @@ bench: build
 	# prewarm
 	ab -k -c 100 -n 100 http://0.0.0.0:5000/ping
 	# real benchmark
-	ab -k -c 100 -n 10000 http://0.0.0.0:5000/ping
+	ab -e benchmark.csv -g gnuplot -l -k -c 100 -n 10000 http://0.0.0.0:5000/ping
 	@sleep 1
 	# node --prof-process isolate-0xnnnnnnnnnnnn-v8.log > processed.txt
 
