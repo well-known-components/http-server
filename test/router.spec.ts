@@ -1012,7 +1012,6 @@ describe("Router#use()", function () {
       "/foo",
       async function (ctx, next) {
         ctx.foo = "foo"
-        ctx.bar = "bar"
         return next()
       },
       async function (ctx, next) {
@@ -1045,7 +1044,6 @@ describe("Router#use()", function () {
       "/foo",
       async function (ctx, next) {
         ctx.foo = "foo"
-        ctx.bar = "bar"
         return next()
       },
       async function (ctx, next) {
