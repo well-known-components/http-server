@@ -15,6 +15,10 @@ export function compose<Ctx>(...middlewares: Middleware<Ctx>[]): Middleware<Ctx>
     if (typeof fn !== "function") throw new TypeError("Middleware must be composed of functions!")
   }
 
+  if (middlewares.length == 1) {
+    return middlewares[0]
+  }
+
   return function (context: Ctx, next?: Middleware<Ctx>): Promise<http.IResponse> {
     // last called middleware #
     let index = -1

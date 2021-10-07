@@ -221,6 +221,29 @@ function integrationSuite({ components }: { components: TestComponents }) {
     }
   })
 
+  // it("returns an async generator", async () => {
+  //   const { fetch, server } = components
+  //   server.resetMiddlewares()
+
+  //   const routes = new Router()
+
+  //   routes.get("/", async (ctx) => ({
+  //     status: 201,
+  //     async *body() {
+  //       yield "One line\n"
+  //       yield "Another line\n"
+  //     },
+  //   }))
+
+  //   server.use(routes.middleware())
+
+  //   {
+  //     const res = await fetch.fetch(`/`)
+  //     expect(res.status).toEqual(201)
+  //     expect(await res.text()).toEqual("One line\nAnother line\n")
+  //   }
+  // })
+
   it("send and read form data using busboy", async () => {
     const { fetch, server } = components
     server.resetMiddlewares()

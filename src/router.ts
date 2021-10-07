@@ -55,15 +55,15 @@ export type RoutedContext<Context, Path extends string> = IHttpServerComponent.P
 /** @public */
 export type RoutePathSignature<Context> = <T extends string>(
   path: T,
-  middleware: IHttpServerComponent.IRequestHandler<RoutedContext<Context, T>>
-) => void
+  ...middlewares: Array<IHttpServerComponent.IRequestHandler<RoutedContext<Context, T>>>
+) => Router<Context>
 
 function createMethodHandler<Context>(
   router: Router<Context>,
   method: IHttpServerComponent.HTTPMethod
 ): RoutePathSignature<Context> {
-  return function (path, middleware) {
-    router.register(path, [method], middleware as IHttpServerComponent.IRequestHandler<Context>, {})
+  return function (path, ...middlewares) {
+    router.register(path, [method], compose(...middlewares) as IHttpServerComponent.IRequestHandler<Context>, {})
     return router
   }
 }
