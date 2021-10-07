@@ -1,4 +1,3 @@
-import expect from "expect"
 import { Stream } from "stream"
 import { createReadStream, readFileSync } from "fs"
 import { getUnderlyingServer, Router } from "../src"

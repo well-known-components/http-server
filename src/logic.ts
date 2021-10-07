@@ -137,7 +137,7 @@ export const coerceErrorsMiddleware: Middleware<any> = async (_, next) => {
 }
 
 function respondBuffer(
-  buffer: Buffer,
+  buffer: ArrayBuffer,
   response: IHttpServerComponent.IResponse,
   mutableHeaders: fetch.Headers
 ): fetch.Response {
@@ -158,12 +158,7 @@ function respondJson(
   if (!mutableHeaders.has("content-type")) {
     mutableHeaders.set("content-type", "application/json")
   }
-  const newBody = Buffer.from(JSON.stringify(json))
-  mutableHeaders.set("content-length", newBody.byteLength.toFixed())
-  return new fetch.Response(newBody, {
-    ...(response as fetch.ResponseInit),
-    headers: mutableHeaders,
-  })
+  return respondString(JSON.stringify(json), response, mutableHeaders)
 }
 
 function respondString(
@@ -174,13 +169,13 @@ function respondString(
   // TODO: test
   // TODO: accept encoding
   const returnEncoding = "utf-8"
-  const r = respondBuffer(Buffer.from(txt, returnEncoding), response, mutableHeaders)
+  const retBuffer = Buffer.from(txt, returnEncoding)
 
-  if (!r.headers.has("content-type")) {
-    r.headers.set("content-type", `text/plain; charset=${returnEncoding}`)
+  if (!mutableHeaders.has("content-type")) {
+    mutableHeaders.set("content-type", `text/plain; charset=${returnEncoding}`)
   }
 
-  return r
+  return respondBuffer(retBuffer, response, mutableHeaders)
 }
 
 const initialResponse: IHttpServerComponent.IResponse = {
@@ -230,8 +225,8 @@ export function normalizeResponseBody(
 
   if (Buffer.isBuffer(response.body)) {
     return respondBuffer(response.body, response, mutableHeaders)
-  } else if (response.body instanceof Uint8Array || response.body instanceof ArrayBuffer) {
-    return respondBuffer(Buffer.from(response.body), response, mutableHeaders)
+  } else if (response.body instanceof ArrayBuffer || response.body instanceof Uint8Array) {
+    return respondBuffer(response.body, response, mutableHeaders)
   } else if (typeof response.body == "string") {
     return respondString(response.body, response, mutableHeaders)
   } else if (response.body instanceof Stream) {

@@ -4,3 +4,5 @@ temp
 coverage
 *.log
 processed.txt
+gnuplot
+benchmark.csv
