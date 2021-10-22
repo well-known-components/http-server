@@ -111,7 +111,7 @@ describe("Router", function () {
     const res = await app.fetch("/double")
     expect(res.status).toEqual(200)
 
-    expect((await res.json() as any).message).toEqual("Hello World!")
+    expect(((await res.json()) as any).message).toEqual("Hello World!")
   })
 
   it("supports promises for async/await", async function () {
@@ -433,7 +433,7 @@ it("supports promises for route middleware", async function () {
   const readVersion = function () {
     return new Promise(function (resolve, reject) {
       // const packagePath = path.join(import.meta.url, "..", "..", "package.json").replace(/^file:/, '')
-      const packagePath = path.join(__dirname, "..", "package.json").replace(/^file:/, '')
+      const packagePath = path.join(__dirname, "..", "package.json").replace(/^file:/, "")
       fs.readFile(packagePath, "utf8", function (err, data) {
         if (err) return reject(err)
         resolve(JSON.parse(data).version)
@@ -1003,6 +1003,71 @@ describe("Router#use()", function () {
       expect(await res.json()).toHaveProperty("foobar", "foobar")
     }
   })
+
+  it("multiple middlewares work .use", async function () {
+    const app = createTestServerComponent()
+    const router = new Router<{ foo?: any; bar?: any }>()
+
+    router.use(
+      "/foo",
+      async function (ctx, next) {
+        ctx.foo = "foo"
+        return next()
+      },
+      async function (ctx, next) {
+        ctx.bar = "bar"
+        return next()
+      }
+    )
+
+    router.get("/foo", async function (ctx, next) {
+      return {
+        body: {
+          foobar: ctx.foo + ctx.bar,
+        },
+      }
+    })
+
+    app.use(router.middleware())
+
+    {
+      const res = await app.fetch("/foo")
+      expect(res.status).toEqual(200)
+      expect(await res.json()).toHaveProperty("foobar", "foobar")
+    }
+  })
+  it("multiple middlewares work .get", async function () {
+    const app = createTestServerComponent()
+    const router = new Router<{ foo?: any; bar?: any }>()
+
+    router.get(
+      "/foo",
+      async function (ctx, next) {
+        ctx.foo = "foo"
+        return next()
+      },
+      async function (ctx, next) {
+        ctx.bar = "bar"
+        return next()
+      }
+    )
+
+    router.get("/foo", async function (ctx, next) {
+      return {
+        body: {
+          foobar: ctx.foo + ctx.bar,
+        },
+      }
+    })
+
+    app.use(router.middleware())
+
+    {
+      const res = await app.fetch("/foo")
+      expect(res.status).toEqual(200)
+      expect(await res.json()).toHaveProperty("foobar", "foobar")
+    }
+  })
 })
 
 it("without path, does not set params.0 to the matched path - gh-247", async function () {
@@ -1224,7 +1289,7 @@ describe("Router#register()", function () {
         const res = await app.fetch("/things/1/list")
         expect(res.status).toEqual(200)
 
-        expect((await res.json() as any).thing_id).toEqual("1")
+        expect(((await res.json()) as any).thing_id).toEqual("1")
       })
 
       it("responds with 404 when has a trailing slash", async function () {
