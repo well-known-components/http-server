@@ -53,7 +53,7 @@ describe("Layer", function () {
       const notexistHandle: any = undefined
       expect(function () {
         router.get("/foo", notexistHandle)
-      }).toThrow("GET `/foo`: `middleware` must be a function, not `undefined`")
+      }).toThrow("Middleware must be composed of functions!")
     })
   })
 

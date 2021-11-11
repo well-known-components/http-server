@@ -194,7 +194,6 @@ export async function createStatusCheckComponent<Context extends object = {}>(co
 
   return {
     async start(opt) {
-      process.stderr.write("START CALLED")
       mutStartOptions = opt
     },
   }

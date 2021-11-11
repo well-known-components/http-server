@@ -11,7 +11,7 @@ module.exports = {
   // preset: "ts-jest/presets/default-esm",
   preset: "ts-jest",
   coverageDirectory: "coverage",
-  collectCoverageFrom: ["src/**/*.ts", "src/**/*.js"],
+  collectCoverageFrom: ["src/**/*.ts", "src/**/*.js", "!src/benchmark.ts",],
   testMatch: ["**/*.spec.(ts)"],
   testEnvironment: "node",
 }

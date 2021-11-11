@@ -1,5 +1,5 @@
 import * as fetch from "node-fetch"
-import { Stream } from "stream"
+import { Readable, Stream } from "stream"
 import * as http from "http"
 import * as https from "https"
 import destroy from "destroy"
