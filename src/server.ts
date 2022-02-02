@@ -14,6 +14,8 @@ import { IncomingMessage } from "http"
 import { createServerHandler } from "./server-handler"
 import * as https from "https"
 import { createServerTerminator } from "./terminator"
+import { Socket } from "net"
+
 
 /**
  * @public
@@ -36,7 +38,7 @@ export async function createServerComponent<Context extends object>(
   components: ServerComponents,
   options: Partial<IHttpServerOptions>
 ): Promise<FullHttpServerComponent<Context>> {
-  const { config, logs } = components
+  const { config, logs, ws } = components
   const logger = logs.getLogger("http-server")
 
   // config
@@ -118,10 +120,33 @@ export async function createServerComponent<Context extends object>(
     resetMiddlewares: serverHandler.resetMiddlewares,
   }
 
+
+
   async function asyncHandle(req: IncomingMessage, res: ExpressModule.Response) {
     const request = getRequestFromNodeMessage(req, host, server instanceof https.Server ? "https" : "http")
     const response = await serverHandler.processRequest(configuredContext, request)
+
     success(response, res)
+  }
+
+  if (ws) {
+    server.on('upgrade', (req: IncomingMessage, socket: Socket, head: Buffer) => {
+      return handleUpgrade(req, socket, head).catch(console.log)
+    })
+  }
+
+  async function handleUpgrade(req: IncomingMessage, socket: Socket, head: Buffer) {
+    if (!ws) return
+    const request = getRequestFromNodeMessage(req, host, server instanceof https.Server ? "https" : "http")
+    const response = await serverHandler.processRequest(configuredContext, request)
+
+    if (response.status === 101) {
+      ws.handleUpgrade(req, socket, head, (wsSocket) => {
+        ws.emit('connection', wsSocket, req)
+      });
+    } else {
+      socket.end()
+    }
   }
 
   app.use((req, res) => {
