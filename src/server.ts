@@ -9,7 +9,6 @@ import type {
 import { _setUnderlyingServer } from "./injectors"
 import { getServer, success, getRequestFromNodeMessage } from "./logic"
 import type { ServerComponents, IHttpServerOptions } from "./types"
-import { IncomingMessage, ServerResponse } from "http"
 import { createServerHandler } from "./server-handler"
 import * as http from "http"
 import * as https from "https"
@@ -123,52 +122,49 @@ export async function createServerComponent<Context extends object>(
 
   const defaultSchema = server instanceof https.Server ? "https" : "http"
 
-  async function asyncHandle(req: IncomingMessage, res: ServerResponse) {
+  async function asyncHandle(req: http.IncomingMessage, res: http.ServerResponse) {
     const request = getRequestFromNodeMessage(req, host, defaultSchema)
     const response = await serverHandler.processRequest(configuredContext, request)
 
     success(response, res)
   }
 
-  async function handleUpgrade(req: IncomingMessage, socket: Socket, head: Buffer) {
+  async function handleUpgrade(req: http.IncomingMessage, socket: Socket, head: Buffer) {
     if (!ws) {
-      socket.end()
-      return
+      throw new Error("No WebSocketServer present")
     }
 
     const request = getRequestFromNodeMessage(req, host, defaultSchema)
-    try {
-      const response = await serverHandler.processRequest(configuredContext, request)
+    const response = await serverHandler.processRequest(configuredContext, request)
 
-      const cb = getWebSocketCallback(response)
+    const cb = getWebSocketCallback(response)
 
-      if (cb) {
-        ws.handleUpgrade(req, socket, head, async (wsSocket) => {
-          try {
-            await cb(wsSocket)
-          } catch (err: any) {
-            logger.error(err)
-            destroy(socket)
-          }
-        })
-      } else {
-        if (response.status) {
-          const statusCode = isNaN(response.status) ? 404 : response.status
-          const statusText = http.STATUS_CODES[statusCode] || "Not Found"
-          socket.end(`HTTP/${req.httpVersion} ${statusCode} ${statusText}\r\n\r\n`)
-        } else {
-          socket.end()
+    if (cb) {
+      ws.handleUpgrade(req, socket, head, async (wsSocket) => {
+        try {
+          await cb(wsSocket)
+        } catch (err: any) {
+          logger.error(err)
+          destroy(socket)
         }
+      })
+    } else {
+      if (response.status) {
+        const statusCode = isNaN(response.status) ? 404 : response.status
+        const statusText = http.STATUS_CODES[statusCode] || "Not Found"
+        socket.end(`HTTP/${req.httpVersion} ${statusCode} ${statusText}\r\n\r\n`)
+      } else {
+        socket.end()
       }
-    } catch (err: any) {
-      logger.error(err)
-      destroy(socket)
     }
   }
 
   if (ws) {
-    server.on("upgrade", (req: IncomingMessage, socket: Socket, head: Buffer) => {
-      return handleUpgrade(req, socket, head).catch(console.log)
+    server.on("upgrade", (req: http.IncomingMessage, socket: Socket, head: Buffer) => {
+      return handleUpgrade(req, socket, head).catch((err) => {
+        logger.error(err)
+        destroy(socket)
+      })
     })
   }
 
