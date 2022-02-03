@@ -13,7 +13,7 @@ build:
 	./node_modules/.bin/api-extractor run $(LOCAL_ARG) --typescript-compiler-folder ./node_modules/typescript
 
 test:
-	./node_modules/.bin/jest --forceExit --detectOpenHandles --coverage --verbose test/ws.spec.ts
+	./node_modules/.bin/jest --forceExit --detectOpenHandles --coverage --verbose $(TEST_FILE)
 
 test-esm:
 	node --experimental-vm-modules ./node_modules/.bin/jest --forceExit --detectOpenHandles --coverage --verbose
@@ -37,4 +37,4 @@ update-interfaces-next:
 update-interfaces-latest:
 	npm install @well-known-components/interfaces@latest
 
-.PHONY: build test
+.PHONY: build test testy
