@@ -9,11 +9,23 @@ export type IFetchComponent = {
   fetch(url: fetch.RequestInfo, init?: fetch.RequestInit): Promise<fetch.Response>
 }
 
+/** @alpha */
+export type IWebSocketComponent<W = WebSocket> = {
+  createWebSocket(url: string, protocols?: string | string[]): W
+}
+
 /** @public */
 export type ITestHttpServerComponent<Context extends object> = IHttpServerComponent<Context> &
   IFetchComponent & {
     resetMiddlewares(): void
   }
+
+/**
+ * @alpha
+ */
+export type TestServerWithWs = {
+  ws(path: string, protocols: string | string[]): WebSocket
+}
 
 /**
  * Creates a http-server component for tests

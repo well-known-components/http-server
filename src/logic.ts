@@ -9,6 +9,7 @@ import type { IHttpServerComponent } from "@well-known-components/interfaces"
 import type { IHttpServerOptions } from "./types"
 import { HttpError } from "http-errors"
 import { Middleware } from "./middleware"
+import { getWebSocketCallback, upgradeWebSocketResponse, withWebSocketCallback } from "./ws"
 
 /**
  * @internal
@@ -43,9 +44,9 @@ export const isBlob = (object: any): object is Blob => {
 /**
  * @internal
  */
-export function success(data: fetch.Response, res: ExpressModule.Response) {
+export function success(data: fetch.Response, res: http.ServerResponse) {
   if (data.statusText) res.statusMessage = data.statusText
-  if (data.status) res.status(data.status)
+  if (data.status) res.statusCode = data.status
 
   if (data.headers) {
     const headers = new fetch.Headers(data.headers as any)
@@ -57,7 +58,7 @@ export function success(data: fetch.Response, res: ExpressModule.Response) {
   const body = data.body
 
   if (Buffer.isBuffer(body)) {
-    res.send(body)
+    res.end(body)
   } else if (isBlob(body)) {
     // const blob = body as Blob
     // const stream = blob.stream()
@@ -196,6 +197,16 @@ export function normalizeResponseBody(
   request: IHttpServerComponent.IRequest,
   response: IHttpServerComponent.IResponse
 ): fetch.Response {
+  if (!response) {
+    // Not Implemented
+    return new fetch.Response(undefined, { status: 501, statusText: "Server did not produce a valid response" })
+  }
+
+  if (response.status == 101) {
+    const cb = getWebSocketCallback(response)
+    return withWebSocketCallback(new fetch.Response(void 0, { ...response, body: undefined } as any), cb!)
+  }
+
   if (response instanceof fetch.Response) {
     return new fetch.Response(response.body, {
       headers: response.headers,
@@ -204,24 +215,26 @@ export function normalizeResponseBody(
     })
   }
 
-  if (!response) {
-    // Not Implemented
-    return new fetch.Response(undefined, { status: 501, statusText: "Server did not produce a valid response" })
-  }
-
   const is1xx = response.status && response.status >= 100 && response.status < 200
   const is204 = response.status == 204
   const is304 = response.status == 304
   const isHEAD = request.method == "HEAD"
 
+  const mutableHeaders = new fetch.Headers(response.headers as fetch.HeadersInit)
+
+  if (is204 || is304) {
+    // TODO: TEST this code path
+    mutableHeaders.delete("Content-Type")
+    mutableHeaders.delete("Content-Length")
+    mutableHeaders.delete("Transfer-Encoding")
+  }
+
   // https://www.w3.org/Protocols/rfc2616/rfc2616-sec4.html#sec4.4
   // the following responses must not contain any content nor content-length
   if (is1xx || is204 || is304 || isHEAD) {
-    // TODO: TEST
-    return new fetch.Response(undefined, { ...response, body: undefined } as any)
+    // TODO: TEST this code path
+    return new fetch.Response(undefined, { ...response, headers: mutableHeaders, body: undefined } as any)
   }
-
-  const mutableHeaders = new fetch.Headers(response.headers as fetch.HeadersInit)
 
   if (Buffer.isBuffer(response.body)) {
     return respondBuffer(response.body, response, mutableHeaders)

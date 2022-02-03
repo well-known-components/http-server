@@ -1,7 +1,6 @@
 import cors from "cors"
 import compression from "compression"
 import express from "express"
-import type * as ExpressModule from "express"
 import type {
   IBaseComponent,
   IHttpServerComponent,
@@ -10,12 +9,14 @@ import type {
 import { _setUnderlyingServer } from "./injectors"
 import { getServer, success, getRequestFromNodeMessage } from "./logic"
 import type { ServerComponents, IHttpServerOptions } from "./types"
-import { IncomingMessage } from "http"
+import { IncomingMessage, ServerResponse } from "http"
 import { createServerHandler } from "./server-handler"
+import * as http from "http"
 import * as https from "https"
 import { createServerTerminator } from "./terminator"
 import { Socket } from "net"
-
+import { getWebSocketCallback } from "./ws"
+import destroy from "destroy"
 
 /**
  * @public
@@ -120,33 +121,55 @@ export async function createServerComponent<Context extends object>(
     resetMiddlewares: serverHandler.resetMiddlewares,
   }
 
+  const defaultSchema = server instanceof https.Server ? "https" : "http"
 
-
-  async function asyncHandle(req: IncomingMessage, res: ExpressModule.Response) {
-    const request = getRequestFromNodeMessage(req, host, server instanceof https.Server ? "https" : "http")
+  async function asyncHandle(req: IncomingMessage, res: ServerResponse) {
+    const request = getRequestFromNodeMessage(req, host, defaultSchema)
     const response = await serverHandler.processRequest(configuredContext, request)
 
     success(response, res)
   }
 
-  if (ws) {
-    server.on('upgrade', (req: IncomingMessage, socket: Socket, head: Buffer) => {
-      return handleUpgrade(req, socket, head).catch(console.log)
-    })
+  async function handleUpgrade(req: IncomingMessage, socket: Socket, head: Buffer) {
+    if (!ws) {
+      socket.end()
+      return
+    }
+
+    const request = getRequestFromNodeMessage(req, host, defaultSchema)
+    try {
+      const response = await serverHandler.processRequest(configuredContext, request)
+
+      const cb = getWebSocketCallback(response)
+
+      if (cb) {
+        ws.handleUpgrade(req, socket, head, async (wsSocket) => {
+          try {
+            await cb(wsSocket)
+          } catch (err: any) {
+            logger.error(err)
+            destroy(socket)
+          }
+        })
+      } else {
+        if (response.status) {
+          const statusCode = isNaN(response.status) ? 404 : response.status
+          const statusText = http.STATUS_CODES[statusCode] || "Not Found"
+          socket.end(`HTTP/${req.httpVersion} ${statusCode} ${statusText}\r\n\r\n`)
+        } else {
+          socket.end()
+        }
+      }
+    } catch (err: any) {
+      logger.error(err)
+      destroy(socket)
+    }
   }
 
-  async function handleUpgrade(req: IncomingMessage, socket: Socket, head: Buffer) {
-    if (!ws) return
-    const request = getRequestFromNodeMessage(req, host, server instanceof https.Server ? "https" : "http")
-    const response = await serverHandler.processRequest(configuredContext, request)
-
-    if (response.status === 101) {
-      ws.handleUpgrade(req, socket, head, (wsSocket) => {
-        ws.emit('connection', wsSocket, req)
-      });
-    } else {
-      socket.end()
-    }
+  if (ws) {
+    server.on("upgrade", (req: IncomingMessage, socket: Socket, head: Buffer) => {
+      return handleUpgrade(req, socket, head).catch(console.log)
+    })
   }
 
   app.use((req, res) => {
