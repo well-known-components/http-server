@@ -137,12 +137,12 @@ export async function createServerComponent<Context extends object>(
     const request = getRequestFromNodeMessage(req, host, defaultSchema)
     const response = await serverHandler.processRequest(configuredContext, request)
 
-    const cb = getWebSocketCallback(response)
+    const websocketConnect = getWebSocketCallback(response)
 
-    if (cb) {
+    if (websocketConnect) {
       ws.handleUpgrade(req, socket, head, async (wsSocket) => {
         try {
-          await cb(wsSocket)
+          await websocketConnect(wsSocket)
         } catch (err: any) {
           logger.error(err)
           destroy(socket)

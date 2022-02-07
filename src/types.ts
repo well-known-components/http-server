@@ -5,15 +5,17 @@ import type * as http from "http"
 import type * as https from "https"
 import type { Socket } from "net"
 
-interface WebSocketServer {
+/**
+ * @alpha
+ * @deprecated Not the final release
+ */
+export interface WebSocketServer {
   handleUpgrade(
     request: http.IncomingMessage,
     socket: Socket,
     upgradeHead: Buffer,
     callback: (client: any, request: http.IncomingMessage) => void,
   ): void;
-
-  emit(event: 'connection', socket: any, request: http.IncomingMessage): void
 }
 
 /**
