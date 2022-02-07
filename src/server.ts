@@ -1,7 +1,6 @@
 import cors from "cors"
 import compression from "compression"
 import express from "express"
-import type * as ExpressModule from "express"
 import type {
   IBaseComponent,
   IHttpServerComponent,
@@ -10,10 +9,13 @@ import type {
 import { _setUnderlyingServer } from "./injectors"
 import { getServer, success, getRequestFromNodeMessage } from "./logic"
 import type { ServerComponents, IHttpServerOptions } from "./types"
-import { IncomingMessage } from "http"
 import { createServerHandler } from "./server-handler"
+import * as http from "http"
 import * as https from "https"
 import { createServerTerminator } from "./terminator"
+import { Socket } from "net"
+import { getWebSocketCallback } from "./ws"
+import destroy from "destroy"
 
 /**
  * @public
@@ -36,7 +38,7 @@ export async function createServerComponent<Context extends object>(
   components: ServerComponents,
   options: Partial<IHttpServerOptions>
 ): Promise<FullHttpServerComponent<Context>> {
-  const { config, logs } = components
+  const { config, logs, ws } = components
   const logger = logs.getLogger("http-server")
 
   // config
@@ -118,10 +120,52 @@ export async function createServerComponent<Context extends object>(
     resetMiddlewares: serverHandler.resetMiddlewares,
   }
 
-  async function asyncHandle(req: IncomingMessage, res: ExpressModule.Response) {
-    const request = getRequestFromNodeMessage(req, host, server instanceof https.Server ? "https" : "http")
+  const defaultSchema = server instanceof https.Server ? "https" : "http"
+
+  async function asyncHandle(req: http.IncomingMessage, res: http.ServerResponse) {
+    const request = getRequestFromNodeMessage(req, host, defaultSchema)
     const response = await serverHandler.processRequest(configuredContext, request)
+
     success(response, res)
+  }
+
+  async function handleUpgrade(req: http.IncomingMessage, socket: Socket, head: Buffer) {
+    if (!ws) {
+      throw new Error("No WebSocketServer present")
+    }
+
+    const request = getRequestFromNodeMessage(req, host, defaultSchema)
+    const response = await serverHandler.processRequest(configuredContext, request)
+
+    const websocketConnect = getWebSocketCallback(response)
+
+    if (websocketConnect) {
+      ws.handleUpgrade(req, socket, head, async (wsSocket) => {
+        try {
+          await websocketConnect(wsSocket)
+        } catch (err: any) {
+          logger.error(err)
+          destroy(socket)
+        }
+      })
+    } else {
+      if (response.status) {
+        const statusCode = isNaN(response.status) ? 404 : response.status
+        const statusText = http.STATUS_CODES[statusCode] || "Not Found"
+        socket.end(`HTTP/${req.httpVersion} ${statusCode} ${statusText}\r\n\r\n`)
+      } else {
+        socket.end()
+      }
+    }
+  }
+
+  if (ws) {
+    server.on("upgrade", (req: http.IncomingMessage, socket: Socket, head: Buffer) => {
+      return handleUpgrade(req, socket, head).catch((err) => {
+        logger.error(err)
+        destroy(socket)
+      })
+    })
   }
 
   app.use((req, res) => {

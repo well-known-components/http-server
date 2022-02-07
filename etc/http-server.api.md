@@ -18,6 +18,7 @@ import type { ILoggerComponent } from '@well-known-components/interfaces';
 import { IMiddlewareAdapterHandler } from '@well-known-components/interfaces';
 import type { IStatusCheckCapableComponent } from '@well-known-components/interfaces';
 import { Key } from 'path-to-regexp';
+import type { Socket } from 'net';
 
 // @public (undocumented)
 export type AllowedMethodOptions = Partial<{
@@ -67,12 +68,14 @@ export type ITestHttpServerComponent<Context extends object> = IHttpServerCompon
     resetMiddlewares(): void;
 };
 
+// @alpha (undocumented)
+export type IWebSocketComponent<W = WebSocket> = {
+    createWebSocket(url: string, protocols?: string | string[]): W;
+};
+
 // @public (undocumented)
 export type RoutedContext<Context, Path extends string> = IHttpServerComponent.PathAwareContext<Context, Path> & {
-    router: Router<any>;
     captures: string[];
-    _matchedRoute?: string;
-    _matchedRouteName?: string;
     matched?: Layer<Context, Path>[];
     routerPath?: string;
 };
@@ -138,10 +141,8 @@ export type RouterOptions = Partial<{
 export type ServerComponents = {
     config: IConfigComponent;
     logs: ILoggerComponent;
+    ws?: WebSocketServer;
 };
-
-// @internal (undocumented)
-export function _setUnderlyingServer(server: IHttpServerComponent<any>, getter: () => Promise<http.Server | https.Server>): void;
 
 // @beta (undocumented)
 export type StandardStatusResponse = {
@@ -162,9 +163,21 @@ export type StandardStatusResponseDetail = {
     componentId?: string;
 };
 
+// @alpha (undocumented)
+export type TestServerWithWs = {
+    ws(path: string, protocols: string | string[]): WebSocket;
+};
+
+// @alpha @deprecated (undocumented)
+export interface WebSocketServer {
+    // (undocumented)
+    handleUpgrade(request: http.IncomingMessage, socket: Socket, upgradeHead: Buffer, callback: (client: any, request: http.IncomingMessage) => void): void;
+}
+
 // Warnings were encountered during analysis:
 //
 // src/router.ts:51:3 - (ae-forgotten-export) The symbol "Layer" needs to be exported by the entry point index.d.ts
+// src/types.ts:27:3 - (ae-incompatible-release-tags) The symbol "ws" is marked as @public, but its signature references "WebSocketServer" which is marked as @alpha
 
 // (No @packageDocumentation comment for this package)
 

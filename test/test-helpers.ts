@@ -5,13 +5,15 @@ import {
   ILoggerComponent,
   IStatusCheckCapableComponent,
 } from "@well-known-components/interfaces"
-import { IFetchComponent } from "../src"
+import { IFetchComponent, IWebSocketComponent } from "../src"
+import wsLib from "ws"
 
 export type TestComponents = {
   server: IHttpServerComponent<{}> & { resetMiddlewares(): void }
   logs: ILoggerComponent
   config: IConfigComponent
   fetch: IFetchComponent
+  ws: IWebSocketComponent<wsLib.WebSocket>
 }
 
 export type TestComponentsWithStatus = TestComponents & {
@@ -28,3 +30,8 @@ export type MockedLifecycleComponent = IBaseComponent &
     setStartupProbe(result: Promise<boolean>): void
     setReadynessProbe(result: Promise<boolean>): void
   }
+
+
+export function timeout(ms: number): Promise<never> {
+  return new Promise((_, reject) => setTimeout(reject, ms).unref())
+}

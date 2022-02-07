@@ -2,9 +2,10 @@ import { createConfigComponent } from "@well-known-components/env-config-provide
 import { createLogComponent } from "@well-known-components/logger"
 import { createRunner } from "@well-known-components/test-helpers"
 import nodeFetch, { RequestInit } from "node-fetch"
-import { createServerComponent, createStatusCheckComponent, IFetchComponent } from "../src"
+import { createServerComponent, createStatusCheckComponent, IFetchComponent, IWebSocketComponent } from "../src"
 import { createMockedLifecycleComponent } from "./mockedLifecycleComponent"
 import { TestComponents, TestComponentsWithStatus } from "./test-helpers"
+import wsLib, { WebSocketServer } from "ws"
 
 let currentPort = 19000
 
@@ -35,7 +36,9 @@ async function initComponents<C extends object>(): Promise<TestComponents> {
     "HTTP_SERVER_HOST"
   )}:${await config.requireNumber("HTTP_SERVER_PORT")}`
 
-  const server = await createServerComponent<C>({ logs, config }, {})
+  const wss = new WebSocketServer({ noServer: true })
+
+  const server = await createServerComponent<C>({ logs, config, ws: wss }, {})
 
   const fetch: IFetchComponent = {
     async fetch(url: any, initRequest?: any) {
@@ -47,7 +50,17 @@ async function initComponents<C extends object>(): Promise<TestComponents> {
     },
   }
 
-  return { logs, config, server, fetch }
+  const ws: IWebSocketComponent<wsLib.WebSocket> = {
+    createWebSocket(url: string, protocols?: string | string[]) {
+      if (typeof url == "string" && url.startsWith("/")) {
+        return new wsLib.WebSocket(protocolHostAndProtocol.replace(/^http/, 'ws') + url, protocols)
+      } else {
+        return new wsLib.WebSocket(url, protocols)
+      }
+    },
+  }
+
+  return { logs, config, server, fetch, ws }
 }
 
 async function initComponentsWithStatus<C extends object>(): Promise<TestComponentsWithStatus> {
