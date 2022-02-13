@@ -408,4 +408,43 @@ function integrationSuite({ components }: { components: TestComponents }) {
       expect(await res.json()).toEqual({ user: "xyz" })
     }
   })
+
+  it("xss sanity", async () => {
+    const { fetch, server } = components
+    server.resetMiddlewares()
+
+    const routes = new Router()
+
+    server.use(async (ctx) => {
+      return {
+        status: 200,
+        body: ctx.url.toJSON(),
+      }
+    })
+
+    {
+      const res = await fetch.fetch(
+        `/${encodeURIComponent(`\u001B]8;;https://example.com\"/onmouseover=\"alert(1)\u0007example\u001B]8;;\u0007`)}`
+      )
+      expect(res.status).toEqual(200)
+      expect(await res.text()).toContain(
+        "/%1B%5D8%3B%3Bhttps%3A%2F%2Fexample.com%22%2Fonmouseover%3D%22alert(1)%07example%1B%5D8%3B%3B%07"
+      )
+    }
+
+    {
+      const res = await fetch.fetch(
+        `/\u001B]8;;https://example.com\"/onmouseover=\"alert(1)\u0007example\u001B]8;;\u0007`
+      )
+      expect(res.status).toEqual(200)
+      expect(await res.text()).toContain("/%1B]8;;https://example.com%22/onmouseover=%22alert(1)%07example%1B]8;;")
+    }
+
+    {
+      const res = await fetch.fetch(
+        `/\\u001B]8;;https://example.com\"/onmouseover=\"alert(1)\\u0007example\\u001B]8;;\\u0007`
+      )
+      expect(res.status).toEqual(404)
+    }
+  })
 }
