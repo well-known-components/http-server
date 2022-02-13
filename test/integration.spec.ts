@@ -409,7 +409,7 @@ function integrationSuite({ components }: { components: TestComponents }) {
     }
   })
 
-  it("xss sanity", async () => {
+  xit("xss sanity", async () => {
     const { fetch, server } = components
     server.resetMiddlewares()
 
