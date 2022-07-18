@@ -46,7 +46,7 @@
     "express": "^4.17.1",
     "fp-future": "^1.0.1",
     "http-errors": "^1.8.0",
-    "node-fetch": "^2.6.7",
+    "node-fetch": "^3.2.9",
     "on-finished": "^2.3.0",
     "path-to-regexp": "^6.2.0"
   },
