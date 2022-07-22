@@ -138,7 +138,7 @@ export const coerceErrorsMiddleware: Middleware<any> = async (_, next) => {
 }
 
 function respondBuffer(
-  buffer: ArrayBuffer,
+  buffer: Buffer,
   response: IHttpServerComponent.IResponse,
   mutableHeaders: fetch.Headers
 ): fetch.Response {
@@ -239,7 +239,7 @@ export function normalizeResponseBody(
   if (Buffer.isBuffer(response.body)) {
     return respondBuffer(response.body, response, mutableHeaders)
   } else if (response.body instanceof ArrayBuffer || response.body instanceof Uint8Array) {
-    return respondBuffer(response.body, response, mutableHeaders)
+    return respondBuffer(Buffer.from(response.body), response, mutableHeaders)
   } else if (typeof response.body == "string") {
     return respondString(response.body, response, mutableHeaders)
   } else if (response.body instanceof Stream) {
