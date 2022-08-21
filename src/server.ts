@@ -1,6 +1,3 @@
-import cors from "cors"
-import compression from "compression"
-import express from "express"
 import type {
   IBaseComponent,
   IHttpServerComponent,
@@ -45,22 +42,30 @@ export async function createServerComponent<Context extends object>(
   const port = await config.requireNumber("HTTP_SERVER_PORT")
   const host = await config.requireString("HTTP_SERVER_HOST")
 
-  // server
-  const app = express()
+  let handlerFn: http.RequestListener = handler
 
-  // configure cors and compression
-  // TODO: set HTTP_SERVER_CORS_[ENABLE,ORIGIN,METHOD,...] to enable and configure
-  if (options.cors) {
-    app.use(cors(options.cors))
+  if (!options.disableExpress) {
+    const cors = await import("cors")
+    const compression = await import("compression")
+    const express = await import("express")
+
+    // server
+    const app = express.default()
+    // configure cors and compression
+    // TODO: set HTTP_SERVER_CORS_[ENABLE,ORIGIN,METHOD,...] to enable and configure
+    if (options.cors) {
+      app.use(cors.default(options.cors))
+    }
+    // TODO: set HTTP_SERVER_COMPRESSION_[ENABLE,...] to enable and configure
+    if (options.compression) {
+      app.use(compression.default(options.compression))
+    }
+    app.disable("x-powered-by")
+    app.use(handler)
+    handlerFn = app
   }
 
-  // TODO: set HTTP_SERVER_COMPRESSION_[ENABLE,...] to enable and configure
-  if (options.compression) {
-    app.use(compression(options.compression))
-  }
-
-  const server = getServer(options, app)
-  app.disable("x-powered-by")
+  const server = getServer(options, handler)
 
   let listen: Promise<typeof server> | undefined
 
@@ -168,25 +173,25 @@ export async function createServerComponent<Context extends object>(
     })
   }
 
-  app.use((req, res) => {
-    asyncHandle(req, res).catch((error) => {
+  function handler(request: http.IncomingMessage, response: http.ServerResponse) {
+    asyncHandle(request, response).catch((error) => {
       logger.error("Unhandled error in http-server middlewares", {
         message: error.message,
-        url: req.url,
-        ip: req.ip,
-        method: req.method,
+        url: request.url || "",
+        method: request.method || "",
         stack: error.stack || error.toString(),
+        headers: request.headers as any,
       })
 
       if (error.code == "ERR_INVALID_URL") {
-        res.status(404)
-        res.end()
+        response.statusCode = 404
+        response.end()
       } else {
-        res.status(500)
-        res.end()
+        response.statusCode = 500
+        response.end()
       }
     })
-  })
+  }
 
   _setUnderlyingServer(ret, async () => {
     if (!server) throw new Error("The server is stopped")

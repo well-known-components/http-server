@@ -310,7 +310,7 @@ export class Router<Context extends {}> implements IHttpServerComponent.MethodHa
         if (!response.status || response.status === 404) {
           if ("matched" in ctx && ctx.matched) {
             for (let i = 0; i < ctx.matched.length; i++) {
-              const route = ctx.matched[i]
+              const route: any = ctx.matched[i]
               for (let j = 0; j < route.methods.length; j++) {
                 const method = route.methods[j]
                 allowed[method] = method

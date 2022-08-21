@@ -14,8 +14,8 @@ export interface WebSocketServer {
     request: http.IncomingMessage,
     socket: Socket,
     upgradeHead: Buffer,
-    callback: (client: any, request: http.IncomingMessage) => void,
-  ): void;
+    callback: (client: any, request: http.IncomingMessage) => void
+  ): void
 }
 
 /**
@@ -30,7 +30,11 @@ export type ServerComponents = {
 /**
  * @public
  */
-export type IHttpServerOptions = {
-  cors: CorsOptions
-  compression: CompressionOptions
-} & ({ https: https.ServerOptions } | { http: http.ServerOptions })
+export type IHttpServerOptions = (
+  | {
+      cors: CorsOptions
+      compression: CompressionOptions
+      disableExpress: boolean
+    }
+) &
+  ({ https: https.ServerOptions } | { http: http.ServerOptions })

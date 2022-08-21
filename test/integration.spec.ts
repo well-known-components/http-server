@@ -5,8 +5,8 @@ import { describeE2E } from "./test-e2e-express-server"
 import { describeTestE2E } from "./test-e2e-test-server"
 import { TestComponents } from "./test-helpers"
 import FormData from "form-data"
-import busboy from "busboy"
 import nodeFetch from "node-fetch"
+import { multipartParserWrapper } from "./busboy"
 
 describeE2E("integration sanity tests using express server backend", integrationSuite)
 describeTestE2E("integration sanity tests using test server", integrationSuite)
@@ -250,35 +250,17 @@ function integrationSuite({ components }: { components: TestComponents }) {
 
     const routes = new Router()
 
-    routes.post("/", async (ctx) => {
-      const formDataParser = new busboy({
-        headers: {
-          "content-type": ctx.request.headers.get("content-type"),
-        },
+    routes.post(
+      "/",
+      multipartParserWrapper(async (ctx) => {
+        return {
+          status: 201,
+          body: {
+            fields: ctx.formData.fields,
+          },
+        }
       })
-
-      const fields: Record<string, any> = {}
-
-      const finished = new Promise((ok, err) => {
-        formDataParser.on("error", err)
-        formDataParser.on("finish", ok)
-      })
-
-      formDataParser.on("field", function (fieldname, val, fieldnameTruncated, valTruncated, encoding, mimetype) {
-        fields[fieldname] = val
-      })
-
-      ctx.request.body.pipe(formDataParser)
-
-      await finished
-
-      return {
-        status: 201,
-        body: {
-          fields,
-        },
-      }
-    })
+    )
 
     server.use(routes.middleware())
 
@@ -290,8 +272,22 @@ function integrationSuite({ components }: { components: TestComponents }) {
       expect(res.status).toEqual(201)
       expect(await res.json()).toEqual({
         fields: {
-          username: "menduz",
-          username2: "cazala",
+          username: {
+            encoding: "7bit",
+            fieldname: "username",
+            mimeType: "text/plain",
+            nameTruncated: false,
+            value: "menduz",
+            valueTruncated: false,
+          },
+          username2: {
+            encoding: "7bit",
+            fieldname: "username2",
+            mimeType: "text/plain",
+            nameTruncated: false,
+            value: "cazala",
+            valueTruncated: false,
+          },
         },
       })
     }

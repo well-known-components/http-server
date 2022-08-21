@@ -54,10 +54,11 @@ export type IFetchComponent = {
 };
 
 // @public (undocumented)
-export type IHttpServerOptions = {
+export type IHttpServerOptions = ({
     cors: CorsOptions;
     compression: CompressionOptions;
-} & ({
+    disableExpress: boolean;
+}) & ({
     https: https.ServerOptions;
 } | {
     http: http.ServerOptions;
