@@ -405,6 +405,30 @@ function integrationSuite({ components }: { components: TestComponents }) {
     }
   })
 
+  it("context always returns a new object", async () => {
+    const { fetch, server } = components
+    server.resetMiddlewares()
+    const results = new Set<{ id: number }>()
+    let i = 0
+    server.use(async (ctx) => {
+      ;(ctx as any).id = i++
+      results.add(ctx as any)
+      return null as any
+    })
+
+    expect((await fetch.fetch(`/`)).status).toEqual(501)
+    expect((await fetch.fetch(`/`)).status).toEqual(501)
+    expect((await fetch.fetch(`/`)).status).toEqual(501)
+    expect((await fetch.fetch(`/`)).status).toEqual(501)
+
+    expect(results.size).toEqual(4)
+    const resultsArray = Array.from(results)
+      .map((_) => _.id)
+      .sort()
+    expect(resultsArray).toEqual([0, 1, 2, 3])
+  })
+
+
   // list of offensive endpoints taken from a real world attack to one of the maintainer's servers
   const offensiveEndpoints = [
     "//%5Cinteract.sh",
@@ -443,9 +467,12 @@ function integrationSuite({ components }: { components: TestComponents }) {
     })
   })
 
-  it("xss sanity", async () => {
+  xit("xss sanity", async () => {
     const { fetch, server } = components
     server.resetMiddlewares()
+
+    const routes = new Router()
+
     server.use(async (ctx) => {
       return {
         status: 200,
