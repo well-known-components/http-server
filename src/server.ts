@@ -129,7 +129,7 @@ export async function createServerComponent<Context extends object>(
 
   async function asyncHandle(req: http.IncomingMessage, res: http.ServerResponse) {
     const request = getRequestFromNodeMessage(req, host, defaultSchema)
-    const response = await serverHandler.processRequest(Object.create(configuredContext), request)
+    const response = await serverHandler.processRequest(configuredContext, request)
 
     success(response, res)
   }

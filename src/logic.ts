@@ -1,10 +1,9 @@
 import * as fetch from "node-fetch"
-import { Readable, Stream } from "stream"
+import { Stream } from "stream"
 import * as http from "http"
 import * as https from "https"
 import destroy from "destroy"
 import onFinished from "on-finished"
-import type * as ExpressModule from "express"
 import type { IHttpServerComponent } from "@well-known-components/interfaces"
 import type { IHttpServerOptions } from "./types"
 import { HttpError } from "http-errors"
@@ -74,7 +73,6 @@ export function success(data: fetch.Response, res: http.ServerResponse) {
     // Note: for context about why this is necessary, check https://github.com/nodejs/node/issues/1180
     onFinished(res, () => destroy(body))
   } else if (body !== undefined && body !== null) {
-    console.dir(body)
     throw new Error("Unknown response body")
   } else {
     res.end()
