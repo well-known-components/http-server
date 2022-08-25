@@ -118,7 +118,7 @@ export async function createServerComponent<Context extends object>(
     // IHttpServerComponent
     use: serverHandler.use,
     setContext(context) {
-      configuredContext = Object.create(context)
+      configuredContext = context
     },
 
     // extra
@@ -129,7 +129,7 @@ export async function createServerComponent<Context extends object>(
 
   async function asyncHandle(req: http.IncomingMessage, res: http.ServerResponse) {
     const request = getRequestFromNodeMessage(req, host, defaultSchema)
-    const response = await serverHandler.processRequest(configuredContext, request)
+    const response = await serverHandler.processRequest(Object.create(configuredContext), request)
 
     success(response, res)
   }

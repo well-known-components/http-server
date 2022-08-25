@@ -45,8 +45,11 @@ export function createTestServerComponent<Context extends object = {}>(): ITestH
       } else {
         const tempHeaders = new fetch.Headers(initRequest?.headers)
         const hostname = tempHeaders.get("X-Forwarded-Host") || tempHeaders.get("host") || "0.0.0.0"
-        const protocol = "http"
-        const newUrl = new URL(url, protocol + "://" + hostname)
+        const protocol = tempHeaders.get('X-Forwarded-Proto') == "https" ? 'https' : 'http'
+        let newUrl = new URL(protocol + "://" + hostname + url)
+        try {
+          newUrl = new URL(url, protocol + "://" + hostname)
+        } catch {}
         req = new fetch.Request(newUrl.toString(), initRequest)
       }
 

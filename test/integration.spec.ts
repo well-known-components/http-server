@@ -405,12 +405,47 @@ function integrationSuite({ components }: { components: TestComponents }) {
     }
   })
 
-  xit("xss sanity", async () => {
+  // list of offensive endpoints taken from a real world attack to one of the maintainer's servers
+  const offensiveEndpoints = [
+    "//%5Cinteract.sh",
+    "//%01%02%03%04%0a%0d%0a/admin/",
+    "//..%25%35%63/admin/",
+    "//..%255c/admin/",
+    "//%3C%3E//interact.sh",
+    "//%3C%3F/admin/",
+    "//..%5c/admin/",
+    "////interact.sh@/",
+    "///%5C/interact.sh/",
+    "///interact.sh@/",
+    "//%5cinteract.sh",
+    "///%5Ctinteract.sh/",
+    "/phpweb4_4.1.2.sql",
+    "//https:interact.sh",
+  ]
+
+  describe("offensive endpoints", () => {
+    offensiveEndpoints.forEach((endpoint) => {
+      it(endpoint, async () => {
+        const { fetch, server } = components
+        server.resetMiddlewares()
+        server.use(async (ctx) => {
+          console.log(ctx)
+          return {
+            status: 200,
+            body: ctx.url.toJSON(),
+          }
+        })
+
+        const res = await fetch.fetch(endpoint)
+        expect(res.status).toEqual(200)
+        expect(await res.text()).toContain(endpoint)
+      })
+    })
+  })
+
+  it("xss sanity", async () => {
     const { fetch, server } = components
     server.resetMiddlewares()
-
-    const routes = new Router()
-
     server.use(async (ctx) => {
       return {
         status: 200,
