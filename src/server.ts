@@ -125,10 +125,8 @@ export async function createServerComponent<Context extends object>(
     resetMiddlewares: serverHandler.resetMiddlewares,
   }
 
-  const defaultSchema = server instanceof https.Server ? "https" : "http"
-
   async function asyncHandle(req: http.IncomingMessage, res: http.ServerResponse) {
-    const request = getRequestFromNodeMessage(req, host, defaultSchema)
+    const request = getRequestFromNodeMessage(req, host)
     const response = await serverHandler.processRequest(configuredContext, request)
 
     success(response, res)
@@ -139,7 +137,7 @@ export async function createServerComponent<Context extends object>(
       throw new Error("No WebSocketServer present")
     }
 
-    const request = getRequestFromNodeMessage(req, host, defaultSchema)
+    const request = getRequestFromNodeMessage(req, host)
     const response = await serverHandler.processRequest(configuredContext, request)
 
     const websocketConnect = getWebSocketCallback(response)
@@ -182,6 +180,7 @@ export async function createServerComponent<Context extends object>(
         stack: error.stack || error.toString(),
         headers: request.headers as any,
       })
+      console.error(error)
 
       if (error.code == "ERR_INVALID_URL") {
         response.statusCode = 404

@@ -86,8 +86,7 @@ export function getDefaultMiddlewares(): Middleware<any>[] {
 
 export const getRequestFromNodeMessage = <T extends http.IncomingMessage>(
   request: T,
-  host: string,
-  protocol: string
+  host: string
 ): IHttpServerComponent.IRequest => {
   const headers = new fetch.Headers()
 
@@ -111,8 +110,13 @@ export const getRequestFromNodeMessage = <T extends http.IncomingMessage>(
     requestInit.body = request
   }
 
+  const protocol = headers.get("X-Forwarded-Proto") == "https" ? "https" : "http"
   const baseUrl = protocol + "://" + (headers.get("X-Forwarded-Host") || headers.get("host") || host || "0.0.0.0")
-  const ret = new fetch.Request(new URL(request.url!, baseUrl).toString(), requestInit)
+  let url = new URL(baseUrl + request.url!)
+  try {
+    url = new URL(request.url!, baseUrl)
+  } catch {}
+  const ret = new fetch.Request(url.toString(), requestInit)
 
   return ret
 }

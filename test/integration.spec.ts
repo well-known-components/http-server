@@ -442,23 +442,24 @@ function integrationSuite({ components }: { components: TestComponents }) {
     "///%5C/interact.sh/": 404,
     "///interact.sh@/": 404,
     "///%5Ctinteract.sh/": 404,
-    "//https:interact.sh": 500
+    "//https:interact.sh": 404
   }
 
-  xdescribe("offensive endpoints", () => {
+  describe("offensive endpoints", () => {
     Object.entries(offensiveEndpoints).forEach(([endpoint, status]) => {
       it(endpoint, async () => {
         const { fetch, server } = components
         server.resetMiddlewares()
         server.use(async (ctx) => {
           return {
-            status: 500,
+            status: 201,
             body: ctx.url.toJSON(),
           }
         })
 
         const res = await fetch.fetch(endpoint)
-        expect(res.status).toEqual(status)
+        expect(res.status).toEqual(201)
+        expect(await res.text()).toContain(endpoint)
       })
     })
   })

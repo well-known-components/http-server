@@ -26,7 +26,7 @@ export type AllowedMethodOptions = Partial<{
 const injectedMiddlewareRouterSymbol = Symbol("injected-router")
 
 /** @internal */
-function getInjectedRouter<C>(middleware: Middleware<C>): Router<C> | null {
+function getInjectedRouter<C extends {}>(middleware: Middleware<C>): Router<C> | null {
   return (middleware as any)[injectedMiddlewareRouterSymbol] || null
 }
 
@@ -53,12 +53,12 @@ export type RoutedContext<Context, Path extends string> = IHttpServerComponent.P
 }
 
 /** @public */
-export type RoutePathSignature<Context> = <T extends string>(
+export type RoutePathSignature<Context extends {}> = <T extends string>(
   path: T,
   ...middlewares: Array<IHttpServerComponent.IRequestHandler<RoutedContext<Context, T>>>
 ) => Router<Context>
 
-function createMethodHandler<Context>(
+function createMethodHandler<Context extends {}>(
   router: Router<Context>,
   method: IHttpServerComponent.HTTPMethod
 ): RoutePathSignature<Context> {
