@@ -26,7 +26,7 @@ export type AllowedMethodOptions = Partial<{
 const injectedMiddlewareRouterSymbol = Symbol("injected-router")
 
 /** @internal */
-function getInjectedRouter<C>(middleware: Middleware<C>): Router<C> | null {
+function getInjectedRouter<C extends {}>(middleware: Middleware<C>): Router<C> | null {
   return (middleware as any)[injectedMiddlewareRouterSymbol] || null
 }
 
@@ -53,12 +53,12 @@ export type RoutedContext<Context, Path extends string> = IHttpServerComponent.P
 }
 
 /** @public */
-export type RoutePathSignature<Context> = <T extends string>(
+export type RoutePathSignature<Context extends {}> = <T extends string>(
   path: T,
   ...middlewares: Array<IHttpServerComponent.IRequestHandler<RoutedContext<Context, T>>>
 ) => Router<Context>
 
-function createMethodHandler<Context>(
+function createMethodHandler<Context extends {}>(
   router: Router<Context>,
   method: IHttpServerComponent.HTTPMethod
 ): RoutePathSignature<Context> {
@@ -310,7 +310,7 @@ export class Router<Context extends {}> implements IHttpServerComponent.MethodHa
         if (!response.status || response.status === 404) {
           if ("matched" in ctx && ctx.matched) {
             for (let i = 0; i < ctx.matched.length; i++) {
-              const route = ctx.matched[i]
+              const route: any = ctx.matched[i]
               for (let j = 0; j < route.methods.length; j++) {
                 const method = route.methods[j]
                 allowed[method] = method

@@ -98,14 +98,17 @@ async function main({ components, startComponents, stop }: Lifecycle.EntryPointP
 // initComponents role is to create BUT NOT START the components,
 // this function is only called once by the Lifecycle manager
 async function initComponents(): Promise<Components> {
-  const logs = createLogComponent()
+  const logs = await createLogComponent({})
 
   const config = createConfigComponent({
     HTTP_SERVER_PORT: "5000",
     HTTP_SERVER_HOST: "0.0.0.0",
   })
 
-  const server = await createServerComponent<AppContext>({ logs, config }, {})
+  const server = await createServerComponent<AppContext>(
+    { logs, config },
+    { disableExpress: process.env.DISABLE_EXPRESS == 'true' }
+  )
 
   return /*components*/ {
     logs,

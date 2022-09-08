@@ -5,8 +5,8 @@ import { describeE2E } from "./test-e2e-express-server"
 import { describeTestE2E } from "./test-e2e-test-server"
 import { TestComponents } from "./test-helpers"
 import FormData from "form-data"
-import busboy from "busboy"
 import nodeFetch from "node-fetch"
+import { multipartParserWrapper } from "./busboy"
 
 describeE2E("integration sanity tests using express server backend", integrationSuite)
 describeTestE2E("integration sanity tests using test server", integrationSuite)
@@ -250,35 +250,17 @@ function integrationSuite({ components }: { components: TestComponents }) {
 
     const routes = new Router()
 
-    routes.post("/", async (ctx) => {
-      const formDataParser = new busboy({
-        headers: {
-          "content-type": ctx.request.headers.get("content-type"),
-        },
+    routes.post(
+      "/",
+      multipartParserWrapper(async (ctx) => {
+        return {
+          status: 201,
+          body: {
+            fields: ctx.formData.fields,
+          },
+        }
       })
-
-      const fields: Record<string, any> = {}
-
-      const finished = new Promise((ok, err) => {
-        formDataParser.on("error", err)
-        formDataParser.on("finish", ok)
-      })
-
-      formDataParser.on("field", function (fieldname, val, fieldnameTruncated, valTruncated, encoding, mimetype) {
-        fields[fieldname] = val
-      })
-
-      ctx.request.body.pipe(formDataParser)
-
-      await finished
-
-      return {
-        status: 201,
-        body: {
-          fields,
-        },
-      }
-    })
+    )
 
     server.use(routes.middleware())
 
@@ -290,8 +272,22 @@ function integrationSuite({ components }: { components: TestComponents }) {
       expect(res.status).toEqual(201)
       expect(await res.json()).toEqual({
         fields: {
-          username: "menduz",
-          username2: "cazala",
+          username: {
+            encoding: "7bit",
+            fieldname: "username",
+            mimeType: "text/plain",
+            nameTruncated: false,
+            value: "menduz",
+            valueTruncated: false,
+          },
+          username2: {
+            encoding: "7bit",
+            fieldname: "username2",
+            mimeType: "text/plain",
+            nameTruncated: false,
+            value: "cazala",
+            valueTruncated: false,
+          },
         },
       })
     }
@@ -432,9 +428,47 @@ function integrationSuite({ components }: { components: TestComponents }) {
     expect(resultsArray).toEqual([0, 1, 2, 3])
   })
 
+
+  // list of offensive endpoints taken from a real world attack to one of the maintainer's servers
+  const offensiveEndpoints: Record<string, number> = {
+    "//%5Cinteract.sh": 404,
+    "//%01%02%03%04%0a%0d%0a/admin/": 404,
+    "//..%25%35%63/admin/": 404,
+    "//..%255c/admin/": 404,
+    "//%3C%3E//interact.sh": 404,
+    "//%3C%3F/admin/": 404,
+    "//..%5c/admin/": 404,
+    "////interact.sh@/": 404,
+    "///%5C/interact.sh/": 404,
+    "///interact.sh@/": 404,
+    "///%5Ctinteract.sh/": 404,
+    "//https:interact.sh": 404
+  }
+
+  describe("offensive endpoints", () => {
+    Object.entries(offensiveEndpoints).forEach(([endpoint, status]) => {
+      it(endpoint, async () => {
+        const { fetch, server } = components
+        server.resetMiddlewares()
+        server.use(async (ctx) => {
+          return {
+            status: 201,
+            body: ctx.url.toJSON(),
+          }
+        })
+
+        const res = await fetch.fetch(endpoint)
+        expect(res.status).toEqual(201)
+        expect(await res.text()).toContain(endpoint)
+      })
+    })
+  })
+
   xit("xss sanity", async () => {
     const { fetch, server } = components
     server.resetMiddlewares()
+
+    const routes = new Router()
 
     server.use(async (ctx) => {
       return {

@@ -54,10 +54,11 @@ export type IFetchComponent = {
 };
 
 // @public (undocumented)
-export type IHttpServerOptions = {
+export type IHttpServerOptions = ({
     cors: CorsOptions;
     compression: CompressionOptions;
-} & ({
+    disableExpress: boolean;
+}) & ({
     https: https.ServerOptions;
 } | {
     http: http.ServerOptions;
@@ -81,7 +82,7 @@ export type RoutedContext<Context, Path extends string> = IHttpServerComponent.P
 };
 
 // @public (undocumented)
-export type RoutePathSignature<Context> = <T extends string>(path: T, ...middlewares: Array<IHttpServerComponent.IRequestHandler<RoutedContext<Context, T>>>) => Router<Context>;
+export type RoutePathSignature<Context extends {}> = <T extends string>(path: T, ...middlewares: Array<IHttpServerComponent.IRequestHandler<RoutedContext<Context, T>>>) => Router<Context>;
 
 // @public
 export class Router<Context extends {}> implements IHttpServerComponent.MethodHandlers<Context> {

@@ -1,10 +1,9 @@
 import * as fetch from "node-fetch"
-import { Readable, Stream } from "stream"
+import { Stream } from "stream"
 import * as http from "http"
 import * as https from "https"
 import destroy from "destroy"
 import onFinished from "on-finished"
-import type * as ExpressModule from "express"
 import type { IHttpServerComponent } from "@well-known-components/interfaces"
 import type { IHttpServerOptions } from "./types"
 import { HttpError } from "http-errors"
@@ -74,7 +73,6 @@ export function success(data: fetch.Response, res: http.ServerResponse) {
     // Note: for context about why this is necessary, check https://github.com/nodejs/node/issues/1180
     onFinished(res, () => destroy(body))
   } else if (body !== undefined && body !== null) {
-    console.dir(body)
     throw new Error("Unknown response body")
   } else {
     res.end()
@@ -88,8 +86,7 @@ export function getDefaultMiddlewares(): Middleware<any>[] {
 
 export const getRequestFromNodeMessage = <T extends http.IncomingMessage>(
   request: T,
-  host: string,
-  protocol: string
+  host: string
 ): IHttpServerComponent.IRequest => {
   const headers = new fetch.Headers()
 
@@ -113,8 +110,13 @@ export const getRequestFromNodeMessage = <T extends http.IncomingMessage>(
     requestInit.body = request
   }
 
+  const protocol = headers.get("X-Forwarded-Proto") == "https" ? "https" : "http"
   const baseUrl = protocol + "://" + (headers.get("X-Forwarded-Host") || headers.get("host") || host || "0.0.0.0")
-  const ret = new fetch.Request(new URL(request.url!, baseUrl).toString(), requestInit)
+  let url = new URL(baseUrl + request.url!)
+  try {
+    url = new URL(request.url!, baseUrl)
+  } catch {}
+  const ret = new fetch.Request(url.toString(), requestInit)
 
   return ret
 }

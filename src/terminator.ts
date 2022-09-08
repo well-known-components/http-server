@@ -96,7 +96,7 @@ export function createServerTerminator(
     for (const socket of sockets) {
       // This is the HTTP CONNECT request socket.
       // Unclear if I am using wrong type or how else this should be handled.
-      if (!(socket.server instanceof http.Server) && !(socket.server instanceof https.Server)) {
+      if (!(socket.server instanceof https.Server) && !(socket.server instanceof http.Server)) {
         continue
       }
 

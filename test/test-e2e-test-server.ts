@@ -14,7 +14,7 @@ export const describeTestE2E = createRunner<TestComponents>({
 })
 
 async function initComponents<C extends object>(): Promise<TestComponents> {
-  const logs = createLogComponent()
+  const logs = await createLogComponent({})
 
   const config = createConfigComponent({})
 
