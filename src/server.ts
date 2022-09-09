@@ -65,7 +65,7 @@ export async function createServerComponent<Context extends object>(
     handlerFn = app
   }
 
-  const server = getServer(options, handler)
+  const server = getServer(options, handlerFn)
 
   let listen: Promise<typeof server> | undefined
 
