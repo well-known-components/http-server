@@ -50,7 +50,9 @@ export function success(data: fetch.Response, res: http.ServerResponse) {
   if (data.headers) {
     const headers = new fetch.Headers(data.headers as any)
     headers.forEach((value, key) => {
-      res.setHeader(key, value)
+      if (value !== undefined) {
+        res.setHeader(key, value)
+      }
     })
   }
 

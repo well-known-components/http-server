@@ -14,7 +14,9 @@
       ],
       "args": [
         "-i",
-        "--runInBand"
+        "--runInBand",
+        "-t",
+        "FormData"
       ],
       "skipFiles": [
         "<node_internals>/**/*.js",
@@ -22,7 +24,6 @@
       ],
       "console": "integratedTerminal",
       "internalConsoleOptions": "neverOpen",
-      "protocol": "inspector",
       "autoAttachChildProcesses": true
     }
   ]

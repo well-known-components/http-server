@@ -6,6 +6,7 @@ import { createServerComponent, createStatusCheckComponent, IFetchComponent, IWe
 import { createMockedLifecycleComponent } from "./mockedLifecycleComponent"
 import { TestComponents, TestComponentsWithStatus } from "./test-helpers"
 import wsLib, { WebSocketServer } from "ws"
+import * as undici from "undici"
 
 let currentPort = 19000
 
@@ -13,36 +14,51 @@ const e2eRunner = createRunner<TestComponents>({
   async main(program) {
     await program.startComponents()
   },
-  initComponents: createInitComponents({ disableExpress: false }),
+  initComponents: createInitComponents({ disableExpress: false, undici: false }),
 })
 
 const describeE2EWithoutExpress = createRunner<TestComponents>({
   async main(program) {
     await program.startComponents()
   },
-  initComponents: createInitComponents({ disableExpress: true }),
+  initComponents: createInitComponents({ disableExpress: true, undici: false }),
 })
 
 // creates a "mocha-like" describe function to run tests using the test components
 export const describeE2E: typeof e2eRunner = (name, fn) => {
-  e2eRunner("(express) " + name, fn)
-  describeE2EWithoutExpress("(http) " + name, fn)
+  // e2eRunner("(express) " + name, fn)
+  // describeE2EWithoutExpress("(http) " + name, fn)
+  // describeE2EWithStatusChecks("(http status) " + name, fn)
+  describeE2EWithStatusChecksAndUndici("(http undici) " + name, fn)
 }
 
 export const describeE2EWithStatusChecks = createRunner<TestComponentsWithStatus>({
   async main(program) {
     await program.startComponents()
   },
-  initComponents: initComponentsWithStatus,
+  async initComponents() {
+    return initComponentsWithStatus(false)
+  }
 })
 
-function createInitComponents(options: { disableExpress: boolean }) {
+
+export const describeE2EWithStatusChecksAndUndici = createRunner<TestComponentsWithStatus>({
+  async main(program) {
+    await program.startComponents()
+  },
+  async initComponents() {
+    return initComponentsWithStatus(true)
+  }
+})
+
+function createInitComponents(options: { disableExpress: boolean, undici: boolean }) {
   return async function initComponents<C extends object>(): Promise<TestComponents> {
     const logs = await createLogComponent({})
 
     const config = createConfigComponent({
       HTTP_SERVER_PORT: (currentPort += 1).toString(),
       HTTP_SERVER_HOST: "0.0.0.0",
+      UNDICI: undici ? 'true' : ''
     })
 
     const protocolHostAndProtocol = `http://${await config.requireString(
@@ -56,9 +72,9 @@ function createInitComponents(options: { disableExpress: boolean }) {
     const fetch: IFetchComponent = {
       async fetch(url: any, initRequest?: any) {
         if (typeof url == "string" && url.startsWith("/")) {
-          return nodeFetch(protocolHostAndProtocol + url, { ...initRequest })
+          return (options.undici ? undici.fetch : nodeFetch)(protocolHostAndProtocol + url, { ...initRequest }) as any
         } else {
-          return nodeFetch(url, { ...initRequest })
+          return (options.undici ? undici.fetch : nodeFetch)(url, { ...initRequest }) as any
         }
       },
     }
@@ -77,8 +93,8 @@ function createInitComponents(options: { disableExpress: boolean }) {
   }
 }
 
-async function initComponentsWithStatus<C extends object>(): Promise<TestComponentsWithStatus> {
-  const components = await createInitComponents({ disableExpress: false })<C>()
+async function initComponentsWithStatus<C extends object>(undici: boolean): Promise<TestComponentsWithStatus> {
+  const components = await createInitComponents({ disableExpress: false, undici })<C>()
 
   const status = await createStatusCheckComponent({ server: components.server, config: components.config })
 

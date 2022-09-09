@@ -180,7 +180,6 @@ export async function createServerComponent<Context extends object>(
         stack: error.stack || error.toString(),
         headers: request.headers as any,
       })
-      console.error(error)
 
       if (error.code == "ERR_INVALID_URL") {
         response.statusCode = 404

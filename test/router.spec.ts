@@ -1623,6 +1623,7 @@ describe("Router#register()", function () {
         }
       }
     })
+    
 
     it(`prefix and '/' route behavior`, async function () {
       const app = createTestServerComponent()

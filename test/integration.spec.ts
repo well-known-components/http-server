@@ -5,7 +5,9 @@ import { describeE2E } from "./test-e2e-express-server"
 import { describeTestE2E } from "./test-e2e-test-server"
 import { TestComponents } from "./test-helpers"
 import FormData from "form-data"
+import * as undici from "undici"
 import nodeFetch from "node-fetch"
+import Sinon from "sinon"
 import { multipartParserWrapper } from "./busboy"
 
 describeE2E("integration sanity tests using express server backend", integrationSuite)
@@ -166,7 +168,7 @@ function integrationSuite({ components }: { components: TestComponents }) {
     })
     const res = await fetch.fetch(`/`)
     expect(res.ok).toEqual(true)
-    expect(await res.buffer()).toEqual(Buffer.from([33, 22, 33]))
+    expect(Buffer.from(await res.arrayBuffer())).toEqual(Buffer.from([33, 22, 33]))
   })
 
   it("return Uint8Array works", async () => {
@@ -244,8 +246,10 @@ function integrationSuite({ components }: { components: TestComponents }) {
   //   }
   // })
 
-  it("send and read form data using busboy", async () => {
-    const { fetch, server } = components
+  it("send and read form data using FormData", async () => {
+    const { fetch, server, config } = components
+    // TODO: undici doesn't work with FormData yet
+    if ((await config.getString("UNDICI")) == "true") return
     server.resetMiddlewares()
 
     const routes = new Router()
@@ -265,10 +269,10 @@ function integrationSuite({ components }: { components: TestComponents }) {
     server.use(routes.middleware())
 
     {
-      const data = new FormData()
+      const data = (await config.getString("UNDICI")) == "true" ? new undici.FormData() : new FormData()
       data.append("username", "menduz")
       data.append("username2", "cazala")
-      const res = await fetch.fetch(`/`, { body: data, method: "POST" })
+      const res = await fetch.fetch(`/`, { body: data as any, method: "POST" })
       expect(res.status).toEqual(201)
       expect(await res.json()).toEqual({
         fields: {
@@ -428,7 +432,6 @@ function integrationSuite({ components }: { components: TestComponents }) {
     expect(resultsArray).toEqual([0, 1, 2, 3])
   })
 
-
   // list of offensive endpoints taken from a real world attack to one of the maintainer's servers
   const offensiveEndpoints: Record<string, number> = {
     "//%5Cinteract.sh": 404,
@@ -442,7 +445,7 @@ function integrationSuite({ components }: { components: TestComponents }) {
     "///%5C/interact.sh/": 404,
     "///interact.sh@/": 404,
     "///%5Ctinteract.sh/": 404,
-    "//https:interact.sh": 404
+    "//https:interact.sh": 404,
   }
 
   describe("offensive endpoints", () => {
@@ -501,5 +504,98 @@ function integrationSuite({ components }: { components: TestComponents }) {
       )
       expect(res.status).toEqual(404)
     }
+  })
+
+  it("gracefully fail with exceptions (async)", async () => {
+    const { fetch, server } = components
+    server.resetMiddlewares()
+
+    server.use(async (ctx) => {
+      throw new Error("some exception")
+    })
+
+    const res = await fetch.fetch(`/hola`)
+    expect(res.status).toEqual(500)
+  })
+
+  it("gracefully fail with exceptions (sync)", async () => {
+    const { fetch, server } = components
+    server.resetMiddlewares()
+
+    server.use((ctx) => {
+      throw new Error("some exception")
+    })
+
+    const res = await fetch.fetch(`/hola`)
+    expect(res.status).toEqual(500)
+  })
+
+  it("gracefully fail with sinon", async () => {
+    const { fetch, server } = components
+    server.resetMiddlewares()
+    const module = {
+      fn() {},
+    }
+    Sinon.stub(module).fn.throwsException("some exception")
+    server.use(async (ctx) => {
+      module.fn()
+      return {}
+    })
+
+    const res = await fetch.fetch(`/hola`)
+    expect(res.status).toEqual(500)
+  })
+
+  describe("failures inside router", () => {
+    it("gracefully fail with exceptions (async)", async () => {
+      const { fetch, server } = components
+      server.resetMiddlewares()
+      const routes = new Router()
+      server.use(routes.middleware())
+      server.use(routes.allowedMethods())
+
+      routes.get("/hola", async (ctx) => {
+        throw new Error("some exception")
+      })
+
+      const res = await fetch.fetch(`/hola`)
+      expect(res.status).toEqual(500)
+    })
+
+    it("gracefully fail with exceptions (sync)", async () => {
+      const { fetch, server } = components
+      server.resetMiddlewares()
+
+      const routes = new Router()
+      server.use(routes.middleware())
+      server.use(routes.allowedMethods())
+
+      routes.get("/hola", (ctx) => {
+        throw new Error("some exception")
+      })
+
+      const res = await fetch.fetch(`/hola`)
+      expect(res.status).toEqual(500)
+    })
+
+    it("gracefully fail with sinon", async () => {
+      const { fetch, server } = components
+      server.resetMiddlewares()
+      const module = {
+        fn() {},
+      }
+      Sinon.stub(module).fn.throwsException("some exception")
+      const routes = new Router()
+      server.use(routes.middleware())
+      server.use(routes.allowedMethods())
+
+      routes.get("/hola", async (ctx) => {
+        module.fn()
+        return {}
+      })
+
+      const res = await fetch.fetch(`/hola`)
+      expect(res.status).toEqual(500)
+    })
   })
 }
