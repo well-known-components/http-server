@@ -87,8 +87,7 @@ export type RoutePathSignature<Context extends {}> = <T extends string>(path: T,
 // @public
 export class Router<Context extends {}> implements IHttpServerComponent.MethodHandlers<Context> {
     constructor(opts?: RouterOptions);
-    // Warning: (ae-forgotten-export) The symbol "Middleware" needs to be exported by the entry point index.d.ts
-    all(path: string, middleware: Middleware<Context>): this;
+    all<T extends string>(path: T, middleware: IHttpServerComponent.IRequestHandler<RoutedContext<Context, T>>): this;
     allowedMethods(options?: AllowedMethodOptions): IHttpServerComponent.IRequestHandler<Context>;
     // (undocumented)
     connect: RoutePathSignature<Context>;

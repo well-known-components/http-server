@@ -372,8 +372,8 @@ export class Router<Context extends {}> implements IHttpServerComponent.MethodHa
    * @param callback -
    */
 
-  all(path: string, middleware: Middleware<Context>): this {
-    this.register(path, methodsList, middleware, {})
+  all<T extends string>(path: T, middleware: IHttpServerComponent.IRequestHandler<RoutedContext<Context, T>>): this {
+    this.register(path, methodsList, middleware as any, {})
 
     return this
   }
