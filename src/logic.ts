@@ -86,7 +86,7 @@ export function getDefaultMiddlewares(): Middleware<any>[] {
   return [coerceErrorsMiddleware]
 }
 
-export const getRequestFromNodeMessage = <T extends http.IncomingMessage>(
+export const getRequestFromNodeMessage = <T extends http.IncomingMessage & { originalUrl?: string }>(
   request: T,
   host: string
 ): IHttpServerComponent.IRequest => {
@@ -114,9 +114,14 @@ export const getRequestFromNodeMessage = <T extends http.IncomingMessage>(
 
   const protocol = headers.get("X-Forwarded-Proto") == "https" ? "https" : "http"
   const baseUrl = protocol + "://" + (headers.get("X-Forwarded-Host") || headers.get("host") || host || "0.0.0.0")
-  let url = new URL(baseUrl + request.url!)
+
+  // Note: Express.js overwrite `req.url` freely for internal routing
+  // purposes and retains the original value on `req.originalUrl`
+  // @see https://expressjs.com/en/api.html#req.originalUrl
+  const originalUrl = request.originalUrl ?? request.url!
+  let url = new URL(baseUrl + originalUrl)
   try {
-    url = new URL(request.url!, baseUrl)
+    url = new URL(originalUrl, baseUrl)
   } catch {}
   const ret = new fetch.Request(url.toString(), requestInit)
 
