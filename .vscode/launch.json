@@ -13,10 +13,11 @@
         "--async-stack-traces"
       ],
       "args": [
+        "--testTimeout=9999999",
         "-i",
         "--runInBand",
         "-t",
-        "FormData"
+        "uws"
       ],
       "skipFiles": [
         "<node_internals>/**/*.js",

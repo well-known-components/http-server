@@ -125,6 +125,6 @@ describeE2E("with real websockets (ws)", ({ components }) => {
     const sock = ws.createWebSocket("/ws")
     sock.onerror = (x) => didReturnWebSocket.reject(x.error)
 
-    await expect(didReturnWebSocket).rejects.toThrow("socket hang up")
+    await expect(didReturnWebSocket).rejects.toThrow()
   })
 })

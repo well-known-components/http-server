@@ -1,7 +1,7 @@
 import { Stream } from "stream"
 import { createReadStream, readFileSync } from "fs"
 import { getUnderlyingServer, Router } from "../src"
-import { describeE2E } from "./test-e2e-express-server"
+import { describeE2E, testE2EExpress } from "./test-e2e-express-server"
 import { describeTestE2E } from "./test-e2e-test-server"
 import { TestComponents } from "./test-helpers"
 import FormData from "form-data"
@@ -13,11 +13,11 @@ import { multipartParserWrapper } from "./busboy"
 describeE2E("integration sanity tests using express server backend", integrationSuite)
 describeTestE2E("integration sanity tests using test server", integrationSuite)
 
-describeE2E("underlying server", function ({ components }: { components: TestComponents }) {
+testE2EExpress("underlying server", function ({ components }: { components: TestComponents }) {
   it("gets the underlying http server", async () => {
     const { server } = components
     const http = await getUnderlyingServer(server)
-    expect(http.listening).toEqual(true)
+    if (http) expect(http.listening).toEqual(true)
   })
 })
 
@@ -249,7 +249,8 @@ function integrationSuite({ components }: { components: TestComponents }) {
   it("send and read form data using FormData", async () => {
     const { fetch, server, config } = components
     // TODO: undici doesn't work with FormData yet
-    if ((await config.getString("UNDICI")) == "true") return
+    if (fetch.isUndici) return
+
     server.resetMiddlewares()
 
     const routes = new Router()
@@ -269,7 +270,7 @@ function integrationSuite({ components }: { components: TestComponents }) {
     server.use(routes.middleware())
 
     {
-      const data = (await config.getString("UNDICI")) == "true" ? new undici.FormData() : new FormData()
+      const data = fetch.isUndici ? new undici.FormData() : new FormData()
       data.append("username", "menduz")
       data.append("username2", "cazala")
       const res = await fetch.fetch(`/`, { body: data as any, method: "POST" })
