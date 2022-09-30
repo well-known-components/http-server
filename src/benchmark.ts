@@ -57,26 +57,32 @@ async function main({ components, startComponents, stop }: Lifecycle.EntryPointP
       setTimeout(() => stop().catch(console.log), 0)
     }
 
+    const headers = {}
+
     const stage = Math.floor((counter / TOTAL_REQUESTS) * TOTAL_STAGES)
 
     switch (stage) {
       case 1:
         return {
+          headers,
           status: 200,
           body: staticBuffer,
         }
       case 2:
         return {
+          headers,
           status: 200,
           body: staticArrayBuffer,
         }
       case 3:
         return {
+          headers,
           status: 200,
           body: packageJsonString,
         }
       case 4:
         return {
+          headers,
           status: 200,
           body: packageJson,
         }
@@ -84,6 +90,7 @@ async function main({ components, startComponents, stop }: Lifecycle.EntryPointP
 
     // Respond hello world
     return {
+      headers,
       status: 200,
       body: {
         json: true,

@@ -30,9 +30,25 @@ bench-op:
 	@echo '> Initializing server...'
 	@sleep 5
 	# prewarm
-	ab -k -c 100 -n 100 http://0.0.0.0:5000/ping
+	ab -c 100 -n 100 http://0.0.0.0:5000/ping
 	# real benchmark
-	ab -e benchmark_$(TEST_NAME).csv -g gnuplot -l -k -c 100 -n 10000 http://0.0.0.0:5000/ping
+	ab -e benchmark_$(TEST_NAME).csv -g gnuplot -l -c 100 -n 10000 http://0.0.0.0:5000/ping
+	@sleep 1
+	# node --prof-process isolate-0xnnnnnnnnnnnn-v8.log > processed.txt
+
+fast-bench:
+	$(MAKE) build > /dev/null
+	$(MAKE) fast-bench-op UWS=true							 TEST_NAME=uwp-test
+	$(MAKE) fast-bench-op DISABLE_EXPRESS=true   TEST_NAME=http-test
+
+fast-bench-op:
+	@DISABLE_EXPRESS=$(DISABLE_EXPRESS) UWS=$(UWS) node --prof dist/benchmark.js &
+	@echo '> Initializing server...'
+	@sleep 1
+	# prewarm
+	@ab -c 100 -n 100 http://0.0.0.0:5000/ping > /dev/null
+	# real benchmark
+	ab -e benchmark_$(TEST_NAME).csv -g gnuplot -l -c 100 -n 10000 http://0.0.0.0:5000/ping
 	@sleep 1
 	# node --prof-process isolate-0xnnnnnnnnnnnn-v8.log > processed.txt
 

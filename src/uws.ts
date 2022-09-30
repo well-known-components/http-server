@@ -48,7 +48,8 @@ export async function createUwsHttpServer<Context extends object>(
   const host = await config.requireString("HTTP_SERVER_HOST")
 
   const server: uwslib.TemplatedApp = uwslib
-    .App({})
+    .App({
+    })
     .ws("/*", {
       upgrade: wsHandler,
       open(_ws) {
