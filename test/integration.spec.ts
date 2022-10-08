@@ -518,6 +518,36 @@ function integrationSuite({ components }: { components: TestComponents }) {
     expect(res.status).toEqual(500)
   })
 
+  it("gracefully fail with exceptions (async router)", async () => {
+    const { fetch, server } = components
+    server.resetMiddlewares()
+
+    const r = new Router()
+    r.get("/hola", async () => {
+      throw new Error("some exception")
+    })
+
+    server.use(r.middleware())
+
+    const res = await fetch.fetch(`/hola`)
+    expect(res.status).toEqual(500)
+  })
+
+  it("gracefully fail with exceptions (sync router)", async () => {
+    const { fetch, server } = components
+    server.resetMiddlewares()
+
+    const r = new Router()
+    r.get("/hola", () => {
+      throw new Error("some exception")
+    })
+
+    server.use(r.middleware())
+
+    const res = await fetch.fetch(`/hola`)
+    expect(res.status).toEqual(500)
+  })
+
   it("gracefully fail with exceptions (sync)", async () => {
     const { fetch, server } = components
     server.resetMiddlewares()
