@@ -26,9 +26,9 @@ const describeE2EWithoutExpress = createRunner<TestComponents>({
 
 // creates a "mocha-like" describe function to run tests using the test components
 export const describeE2E: typeof e2eRunner = (name, fn) => {
-  // e2eRunner("(express) " + name, fn)
-  // describeE2EWithoutExpress("(http) " + name, fn)
-  // describeE2EWithStatusChecks("(http status) " + name, fn)
+  e2eRunner("(express) " + name, fn)
+  describeE2EWithoutExpress("(http) " + name, fn)
+  describeE2EWithStatusChecks("(http status) " + name, fn)
   describeE2EWithStatusChecksAndUndici("(http undici) " + name, fn)
 }
 
