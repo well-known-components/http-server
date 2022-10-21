@@ -51,9 +51,6 @@
     "on-finished": "^2.4.1",
     "path-to-regexp": "^6.2.1"
   },
-  "peerDependencies": {
-    "@well-known-components/interfaces": "^1.0.0"
-  },
   "files": [
     "dist"
   ]
