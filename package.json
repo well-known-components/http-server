@@ -47,11 +47,15 @@
     "express": "^4.18.1",
     "fp-future": "^1.0.1",
     "http-errors": "^1.8.1",
+    "mitt": "^3.0.0",
     "node-fetch": "^2.6.7",
     "on-finished": "^2.4.1",
     "path-to-regexp": "^6.2.1"
   },
   "files": [
     "dist"
-  ]
+  ],
+  "optionalDependencies": {
+    "uWebSockets.js": "github:uNetworking/uWebSockets.js#v20.10.0"
+  }
 }

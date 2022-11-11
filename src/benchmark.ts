@@ -5,6 +5,7 @@ import { createConfigComponent } from "@well-known-components/env-config-provide
 import { createServerComponent } from "./index"
 import { createLogComponent } from "@well-known-components/logger"
 import { readFileSync } from "fs"
+import { createUwsHttpServer } from "./uws"
 
 // Record of components
 type Components = {
@@ -56,26 +57,32 @@ async function main({ components, startComponents, stop }: Lifecycle.EntryPointP
       setTimeout(() => stop().catch(console.log), 0)
     }
 
+    const headers = {}
+
     const stage = Math.floor((counter / TOTAL_REQUESTS) * TOTAL_STAGES)
 
     switch (stage) {
       case 1:
         return {
+          headers,
           status: 200,
           body: staticBuffer,
         }
       case 2:
         return {
+          headers,
           status: 200,
           body: staticArrayBuffer,
         }
       case 3:
         return {
+          headers,
           status: 200,
           body: packageJsonString,
         }
       case 4:
         return {
+          headers,
           status: 200,
           body: packageJson,
         }
@@ -83,6 +90,7 @@ async function main({ components, startComponents, stop }: Lifecycle.EntryPointP
 
     // Respond hello world
     return {
+      headers,
       status: 200,
       body: {
         json: true,
@@ -105,10 +113,12 @@ async function initComponents(): Promise<Components> {
     HTTP_SERVER_HOST: "0.0.0.0",
   })
 
-  const server = await createServerComponent<AppContext>(
-    { logs, config },
-    { disableExpress: process.env.DISABLE_EXPRESS == 'true' }
-  )
+  const server = process.env.UWS
+    ? await createUwsHttpServer<AppContext>({ logs, config }, {})
+    : await createServerComponent<AppContext>(
+        { logs, config },
+        { disableExpress: process.env.DISABLE_EXPRESS == "true" }
+      )
 
   return /*components*/ {
     logs,

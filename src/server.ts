@@ -8,7 +8,6 @@ import { getServer, success, getRequestFromNodeMessage } from "./logic"
 import type { ServerComponents, IHttpServerOptions } from "./types"
 import { createServerHandler } from "./server-handler"
 import * as http from "http"
-import * as https from "https"
 import { createServerTerminator } from "./terminator"
 import { Socket } from "net"
 import { getWebSocketCallback } from "./ws"
@@ -173,13 +172,7 @@ export async function createServerComponent<Context extends object>(
 
   function handler(request: http.IncomingMessage, response: http.ServerResponse) {
     asyncHandle(request, response).catch((error) => {
-      logger.error("Unhandled error in http-server middlewares", {
-        message: error.message,
-        url: request.url || "",
-        method: request.method || "",
-        stack: error.stack || error.toString(),
-        headers: request.headers as any,
-      })
+      logger.error(error)
 
       if (error.code == "ERR_INVALID_URL") {
         response.statusCode = 404
