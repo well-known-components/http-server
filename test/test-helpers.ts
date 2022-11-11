@@ -12,7 +12,7 @@ export type TestComponents = {
   server: IHttpServerComponent<{}> & { resetMiddlewares(): void }
   logs: ILoggerComponent
   config: IConfigComponent
-  fetch: IFetchComponent
+  fetch: IFetchComponent & {isUndici: boolean}
   ws: IWebSocketComponent<wsLib.WebSocket>
 }
 

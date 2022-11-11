@@ -152,7 +152,7 @@ function respondBuffer(
   mutableHeaders: fetch.Headers
 ): fetch.Response {
   // TODO: test
-  mutableHeaders.set("content-length", buffer.byteLength.toFixed())
+  mutableHeaders.set("Content-Length", buffer.byteLength.toFixed())
   return new fetch.Response(buffer, {
     ...(response as fetch.ResponseInit),
     headers: mutableHeaders,

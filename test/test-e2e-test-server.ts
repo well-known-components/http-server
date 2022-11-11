@@ -20,7 +20,7 @@ async function initComponents<C extends object>(): Promise<TestComponents> {
 
   const server = createTestServerComponent<C>()
 
-  const fetch: IFetchComponent = server
+  const fetch = {...server, isUndici: false }
 
   const ws: IWebSocketComponent<wsLib.WebSocket> = {
     createWebSocket(url: string, protocols?: string | string[]) {

@@ -30,11 +30,16 @@ export type ServerComponents = {
 /**
  * @public
  */
-export type IHttpServerOptions = (
-  | {
-      cors: CorsOptions
-      compression: CompressionOptions
-      disableExpress: boolean
-    }
-) &
+export type IHttpServerOptions = {
+  cors: CorsOptions
+  compression: CompressionOptions
+  disableExpress: boolean
+} &
   ({ https: https.ServerOptions } | { http: http.ServerOptions })
+
+/**
+ * @public
+ */
+export type IUwsHttpServerOptions = {
+  compression: boolean
+}
