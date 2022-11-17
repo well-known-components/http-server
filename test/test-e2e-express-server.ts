@@ -75,11 +75,9 @@ function createInitComponents(options: { disableExpress: boolean; undici: boolea
       "HTTP_SERVER_HOST"
     )}:${await config.requireNumber("HTTP_SERVER_PORT")}`
 
-    const wss = new WebSocketServer({ noServer: true })
-
     const server = options.uws
-      ? await createUwsHttpServer<C>({ logs, config, ws: wss }, {})
-      : await createServerComponent<C>({ logs, config, ws: wss }, { disableExpress: options.disableExpress })
+      ? await createUwsHttpServer<C>({ logs, config }, {})
+      : await createServerComponent<C>({ logs, config, ws: new WebSocketServer({ noServer: true }) }, { disableExpress: options.disableExpress })
 
     const fetch: IFetchComponent & {isUndici: boolean} = {
       async fetch(url: any, initRequest?: any) {
