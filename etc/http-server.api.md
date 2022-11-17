@@ -50,9 +50,6 @@ export type FullHttpServerComponent<Context extends object> = IHttpServerCompone
 };
 
 // @public (undocumented)
-export function getRequestFromµws(request: uwslib.HttpRequest, response: uwslib.HttpResponse, host: string): IHttpServerComponent.IRequest;
-
-// @public (undocumented)
 export function getUnderlyingServer(server: IHttpServerComponent<any>): Promise<http.Server | https.Server>;
 
 // @public (undocumented)
@@ -187,7 +184,7 @@ export interface WebSocketServer {
     handleUpgrade(request: http.IncomingMessage, socket: Socket, upgradeHead: Buffer, callback: (client: any, request: http.IncomingMessage) => void): void;
 }
 
-// @public (undocumented)
+// @public
 export type WsEvents = {
     open: any;
     message: ArrayBuffer;
@@ -195,7 +192,7 @@ export type WsEvents = {
     error: Error;
 };
 
-// @public (undocumented)
+// @public
 export type WsUserData = uwslib.WebSocket & Emitter<WsEvents> & {
     aborted: boolean;
     websocketConnect: WebSocketCallback;
@@ -208,7 +205,7 @@ export type WsUserData = uwslib.WebSocket & Emitter<WsEvents> & {
 
 // Warnings were encountered during analysis:
 //
-// dist/uws.d.ts:15:5 - (ae-forgotten-export) The symbol "WebSocketCallback" needs to be exported by the entry point index.d.ts
+// dist/uws.d.ts:22:5 - (ae-forgotten-export) The symbol "WebSocketCallback" needs to be exported by the entry point index.d.ts
 // src/router.ts:45:3 - (ae-forgotten-export) The symbol "Layer" needs to be exported by the entry point index.d.ts
 // src/types.ts:31:5 - (ae-incompatible-release-tags) The symbol "ws" is marked as @public, but its signature references "WebSocketServer" which is marked as @alpha
 

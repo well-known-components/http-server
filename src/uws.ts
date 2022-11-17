@@ -10,6 +10,10 @@ import { Readable } from "stream"
 import { IHttpServerComponent } from "@well-known-components/interfaces"
 import mitt, { Emitter } from "mitt"
 
+/**
+ * WebSocket events
+ * @public
+ */
 export type WsEvents = {
   open: any
   message: ArrayBuffer
@@ -17,6 +21,10 @@ export type WsEvents = {
   error: Error
 }
 
+/**
+ * WebSocket User Data
+ * @public
+ */
 export type WsUserData = uwslib.WebSocket &
   Emitter<WsEvents> & {
     aborted: boolean
@@ -414,7 +422,7 @@ function onAbortedOrFinishedResponse(res: uwslib.HttpResponse, readStream: Reada
   res.id = -1
 }
 
-export function getRequestFromµws(
+function getRequestFromµws(
   request: uwslib.HttpRequest,
   response: uwslib.HttpResponse,
   host: string
