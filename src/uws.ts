@@ -40,7 +40,7 @@ export async function createUwsHttpServer<Context extends object>(
   components: ServerComponents,
   options: Partial<IUwsHttpServerOptions>
 ): Promise<FullHttpServerComponent<Context>> {
-  const { config, logs, ws } = components
+  const { config, logs } = components
   const logger = logs.getLogger("http-server")
 
   // config
@@ -185,10 +185,6 @@ export async function createUwsHttpServer<Context extends object>(
     })
 
     async function h() {
-      if (!ws) {
-        throw new Error("No WebSocketServer present")
-      }
-
       const request = getRequestFromµws(req, res, host)
       const response = await serverHandler.processRequest(configuredContext, request)
 
