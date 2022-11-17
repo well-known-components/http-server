@@ -8,6 +8,7 @@
 
 import type { CompressionOptions } from 'compression';
 import type { CorsOptions } from 'cors';
+import { Emitter } from 'mitt';
 import * as fetch_2 from 'node-fetch';
 import type * as http from 'http';
 import type * as https from 'https';
@@ -19,6 +20,7 @@ import { IMiddlewareAdapterHandler } from '@well-known-components/interfaces';
 import type { IStatusCheckCapableComponent } from '@well-known-components/interfaces';
 import { Key } from 'path-to-regexp';
 import type { Socket } from 'net';
+import * as uwslib from 'uWebSockets.js';
 
 // @public (undocumented)
 export type AllowedMethodOptions = Partial<{
@@ -39,10 +41,16 @@ export function createStatusCheckComponent<Context extends object = {}>(componen
 // @public
 export function createTestServerComponent<Context extends object = {}>(): ITestHttpServerComponent<Context>;
 
+// @public
+export function createUwsHttpServer<Context extends object>(components: ServerComponents, options: Partial<IUwsHttpServerOptions>): Promise<FullHttpServerComponent<Context>>;
+
 // @public (undocumented)
 export type FullHttpServerComponent<Context extends object> = IHttpServerComponent<Context> & IBaseComponent & IStatusCheckCapableComponent & {
     resetMiddlewares(): void;
 };
+
+// @public (undocumented)
+export function getRequestFromµws(request: uwslib.HttpRequest, response: uwslib.HttpResponse, host: string): IHttpServerComponent.IRequest;
 
 // @public (undocumented)
 export function getUnderlyingServer(server: IHttpServerComponent<any>): Promise<http.Server | https.Server>;
@@ -179,10 +187,30 @@ export interface WebSocketServer {
     handleUpgrade(request: http.IncomingMessage, socket: Socket, upgradeHead: Buffer, callback: (client: any, request: http.IncomingMessage) => void): void;
 }
 
+// @public (undocumented)
+export type WsEvents = {
+    open: any;
+    message: ArrayBuffer;
+    close: any;
+    error: Error;
+};
+
+// @public (undocumented)
+export type WsUserData = uwslib.WebSocket & Emitter<WsEvents> & {
+    aborted: boolean;
+    websocketConnect: WebSocketCallback;
+    readyState: number;
+    readonly CONNECTING: 0;
+    readonly OPEN: 1;
+    readonly CLOSING: 2;
+    readonly CLOSED: 3;
+};
+
 // Warnings were encountered during analysis:
 //
-// dist/router.d.ts:20:5 - (ae-forgotten-export) The symbol "Layer" needs to be exported by the entry point index.d.ts
-// dist/types.d.ts:24:5 - (ae-incompatible-release-tags) The symbol "ws" is marked as @public, but its signature references "WebSocketServer" which is marked as @alpha
+// dist/uws.d.ts:15:5 - (ae-forgotten-export) The symbol "WebSocketCallback" needs to be exported by the entry point index.d.ts
+// src/router.ts:45:3 - (ae-forgotten-export) The symbol "Layer" needs to be exported by the entry point index.d.ts
+// src/types.ts:31:5 - (ae-incompatible-release-tags) The symbol "ws" is marked as @public, but its signature references "WebSocketServer" which is marked as @alpha
 
 // (No @packageDocumentation comment for this package)
 
