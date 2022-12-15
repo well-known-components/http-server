@@ -45,7 +45,7 @@ export type FullHttpServerComponent<Context extends object> = IHttpServerCompone
 };
 
 // @public (undocumented)
-export function getUnderlyingServer(server: IHttpServerComponent<any>): Promise<http.Server | https.Server>;
+export function getUnderlyingServer<T>(server: IHttpServerComponent<any>): Promise<T>;
 
 // @public (undocumented)
 export type IFetchComponent = {

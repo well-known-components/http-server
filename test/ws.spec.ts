@@ -1,8 +1,10 @@
 import future from "fp-future"
+import { getUnderlyingServer } from "../src"
 import { Router } from "../src/router"
 import { createTestServerComponent } from "../src/test-component"
 import { upgradeWebSocketResponse } from "../src/ws"
-import { describeE2E } from "./test-e2e-express-server"
+import { describeE2E, describeE2Euws } from "./test-e2e-express-server"
+import { TemplatedApp } from "uWebSockets.js"
 import { timeout } from "./test-helpers"
 
 describe("upgrade requests with router", () => {
@@ -50,8 +52,8 @@ describeE2E("with real websockets (ws)", ({ components }) => {
       if (ctx.request.headers.get("upgrade") == "websocket") {
         return upgradeWebSocketResponse((sock) => {
           sock.onclose = didCloseServerWebSocket.resolve
-          console.log('Got server socket in state: ' + sock.readyState)
-          sock.send('hello')
+          console.log("Got server socket in state: " + sock.readyState)
+          sock.send("hello")
         })
       }
       return { status: 201 }
@@ -63,11 +65,11 @@ describeE2E("with real websockets (ws)", ({ components }) => {
 
     const sock = ws.createWebSocket("/ws")
     sock.onopen = (x) => {
-      console.log('client socket open')
+      console.log("client socket open")
       didReturnWebSocket.resolve(sock)
     }
     sock.onmessage = (x) => {
-      console.log('received message', x.data)
+      console.log("received message", x.data)
       didReceiveMessageFromServer.resolve(x.data)
     }
     sock.onerror = (x) => {
@@ -115,7 +117,7 @@ describeE2E("with real websockets (ws)", ({ components }) => {
     const router = new Router()
 
     router.get("/ws", async (ctx) => {
-      throw new Error('asd')
+      throw new Error("asd")
     })
 
     server.resetMiddlewares()
@@ -126,5 +128,12 @@ describeE2E("with real websockets (ws)", ({ components }) => {
     sock.onerror = (x) => didReturnWebSocket.reject(x.error)
 
     await expect(didReturnWebSocket).rejects.toThrow()
+  })
+})
+
+describeE2Euws("uws: sanity", (args) => {
+  it("underlying server is app", async () => {
+    const underlying = await getUnderlyingServer<TemplatedApp>(args.components.server)
+    expect(underlying).toHaveProperty("publish")
   })
 })

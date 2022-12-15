@@ -9,6 +9,7 @@ import * as undici from "undici"
 import nodeFetch from "node-fetch"
 import Sinon from "sinon"
 import { multipartParserWrapper } from "./busboy"
+import { Server } from "http"
 
 describeE2E("integration sanity tests using express server backend", integrationSuite)
 describeTestE2E("integration sanity tests using test server", integrationSuite)
@@ -16,7 +17,7 @@ describeTestE2E("integration sanity tests using test server", integrationSuite)
 testE2EExpress("underlying server", function ({ components }: { components: TestComponents }) {
   it("gets the underlying http server", async () => {
     const { server } = components
-    const http = await getUnderlyingServer(server)
+    const http = await getUnderlyingServer<Server>(server)
     if (http) expect(http.listening).toEqual(true)
   })
 })

@@ -27,7 +27,7 @@ const describeE2EWithoutExpress = createRunner<TestComponents>({
   initComponents: createInitComponents({ disableExpress: true, undici: false, uws: false }),
 })
 
-const describeE2Euws = createRunner<TestComponents>({
+export const describeE2Euws = createRunner<TestComponents>({
   async main(program) {
     await program.startComponents()
   },

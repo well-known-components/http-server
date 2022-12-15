@@ -51,6 +51,7 @@ export async function createUwsHttpServer<Context extends object>(
     .App({
     })
     .ws("/*", {
+      compression: options.compression ? uwslib.SHARED_COMPRESSOR : uwslib.DISABLED,
       upgrade: wsHandler,
       open(_ws) {
         const ws = _ws as WsUserData
@@ -136,6 +137,8 @@ export async function createUwsHttpServer<Context extends object>(
     // extra
     resetMiddlewares: serverHandler.resetMiddlewares,
   }
+
+  _setUnderlyingServer(ret, async () => server)
 
   function handler(response: uwslib.HttpResponse, request: uwslib.HttpRequest) {
     let aborted = false
