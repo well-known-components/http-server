@@ -7,6 +7,9 @@ ifeq ($(INSPECT), true)
 INSPECT = --inspect --inspect-brk
 endif
 
+install:
+	npm ci	
+
 build:
 	./node_modules/.bin/tsc -p tsconfig.json
 	rm -rf node_modules/@microsoft/api-extractor/node_modules/typescript || true
@@ -21,12 +24,11 @@ test-esm:
 ci: | build test test-esm
 
 bench: build
-	$(MAKE) bench-op DISABLE_EXPRESS=false TEST_NAME=express-test
-	$(MAKE) bench-op DISABLE_EXPRESS=true  TEST_NAME=http-test
+	$(MAKE) bench-op                       TEST_NAME=http-test
 	$(MAKE) bench-op UWS=true							 TEST_NAME=uwp-test
 
 bench-op:
-	DISABLE_EXPRESS=$(DISABLE_EXPRESS) UWS=$(UWS) node --prof dist/benchmark.js &
+	UWS=$(UWS) node --prof dist/benchmark.js &
 	@echo '> Initializing server...'
 	@sleep 5
 	# prewarm
@@ -39,10 +41,10 @@ bench-op:
 fast-bench:
 	$(MAKE) build > /dev/null
 	$(MAKE) fast-bench-op UWS=true							 TEST_NAME=uwp-test
-	$(MAKE) fast-bench-op DISABLE_EXPRESS=true   TEST_NAME=http-test
+	$(MAKE) fast-bench-op                        TEST_NAME=http-test
 
 fast-bench-op:
-	@DISABLE_EXPRESS=$(DISABLE_EXPRESS) UWS=$(UWS) node --prof dist/benchmark.js &
+	@UWS=$(UWS) node --prof dist/benchmark.js &
 	@echo '> Initializing server...'
 	@sleep 1
 	# prewarm

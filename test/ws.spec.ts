@@ -3,7 +3,7 @@ import { getUnderlyingServer } from "../src"
 import { Router } from "../src/router"
 import { createTestServerComponent } from "../src/test-component"
 import { upgradeWebSocketResponse } from "../src/ws"
-import { describeE2E, describeE2Euws } from "./test-e2e-express-server"
+import { describeE2E, describeE2Euws } from "./test-e2e-harness"
 import { TemplatedApp } from "uWebSockets.js"
 import { timeout } from "./test-helpers"
 

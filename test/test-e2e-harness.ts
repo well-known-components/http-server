@@ -11,33 +11,23 @@ import * as undici from "undici"
 
 let currentPort = 19000
 
-
-
-export const testE2EExpress = createRunner<TestComponents>({
+const describeE2ETest = createRunner<TestComponents>({
   async main(program) {
     await program.startComponents()
   },
-  initComponents: createInitComponents({ disableExpress: false, undici: false, uws: false }),
-})
-
-const describeE2EWithoutExpress = createRunner<TestComponents>({
-  async main(program) {
-    await program.startComponents()
-  },
-  initComponents: createInitComponents({ disableExpress: true, undici: false, uws: false }),
+  initComponents: createInitComponents({ undici: false, uws: false }),
 })
 
 export const describeE2Euws = createRunner<TestComponents>({
   async main(program) {
     await program.startComponents()
   },
-  initComponents: createInitComponents({ disableExpress: true, undici: false, uws: true }),
+  initComponents: createInitComponents({ undici: false, uws: true }),
 })
 
 // creates a "mocha-like" describe function to run tests using the test components
-export const describeE2E: typeof testE2EExpress = (name, fn) => {
-  testE2EExpress("(express) " + name, fn)
-  describeE2EWithoutExpress("(http) " + name, fn)
+export const describeE2E: typeof describeE2ETest = (name, fn) => {
+  describeE2ETest("(http) " + name, fn)
   describeE2EWithStatusChecks("(http status) " + name, fn)
   describeE2EWithStatusChecksAndUndici("(http undici) " + name, fn)
   describeE2Euws("(uws) " + name, fn)
@@ -61,7 +51,7 @@ export const describeE2EWithStatusChecksAndUndici = createRunner<TestComponentsW
   },
 })
 
-function createInitComponents(options: { disableExpress: boolean; undici: boolean; uws: boolean }) {
+function createInitComponents(options: { undici: boolean; uws: boolean }) {
   return async function initComponents<C extends object>(): Promise<TestComponents> {
     const logs = await createLogComponent({})
 
@@ -77,9 +67,9 @@ function createInitComponents(options: { disableExpress: boolean; undici: boolea
 
     const server = options.uws
       ? await createUwsHttpServer<C>({ logs, config }, {})
-      : await createServerComponent<C>({ logs, config, ws: new WebSocketServer({ noServer: true }) }, { disableExpress: options.disableExpress })
+      : await createServerComponent<C>({ logs, config, ws: new WebSocketServer({ noServer: true }) }, {})
 
-    const fetch: IFetchComponent & {isUndici: boolean} = {
+    const fetch: IFetchComponent & { isUndici: boolean } = {
       async fetch(url: any, initRequest?: any) {
         if (typeof url == "string" && url.startsWith("/")) {
           return (options.undici ? undici.fetch : nodeFetch)(protocolHostAndProtocol + url, { ...initRequest }) as any
@@ -108,7 +98,7 @@ async function initComponentsWithStatus<C extends object>(
   undici: boolean,
   uws: boolean
 ): Promise<TestComponentsWithStatus> {
-  const components = await createInitComponents({ disableExpress: false, undici, uws })<C>()
+  const components = await createInitComponents({ undici, uws })<C>()
 
   const status = await createStatusCheckComponent({ server: components.server, config: components.config })
 

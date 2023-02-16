@@ -117,7 +117,7 @@ async function initComponents(): Promise<Components> {
     ? await createUwsHttpServer<AppContext>({ logs, config }, {})
     : await createServerComponent<AppContext>(
         { logs, config },
-        { disableExpress: process.env.DISABLE_EXPRESS == "true" }
+        { }
       )
 
   return /*components*/ {

@@ -6,8 +6,6 @@
 
 /// <reference types="node" />
 
-import type { CompressionOptions } from 'compression';
-import type { CorsOptions } from 'cors';
 import * as fetch_2 from 'node-fetch';
 import type * as http from 'http';
 import type * as https from 'https';
@@ -54,11 +52,7 @@ export type IFetchComponent = {
 };
 
 // @public (undocumented)
-export type IHttpServerOptions = {
-    cors: CorsOptions;
-    compression: CompressionOptions;
-    disableExpress: boolean;
-} & ({
+export type IHttpServerOptions = ({
     https: https.ServerOptions;
 } | {
     http: http.ServerOptions;
@@ -182,7 +176,7 @@ export interface WebSocketServer {
 // Warnings were encountered during analysis:
 //
 // dist/router.d.ts:20:5 - (ae-forgotten-export) The symbol "Layer" needs to be exported by the entry point index.d.ts
-// dist/types.d.ts:24:5 - (ae-incompatible-release-tags) The symbol "ws" is marked as @public, but its signature references "WebSocketServer" which is marked as @alpha
+// dist/types.d.ts:22:5 - (ae-incompatible-release-tags) The symbol "ws" is marked as @public, but its signature references "WebSocketServer" which is marked as @alpha
 
 // (No @packageDocumentation comment for this package)
 
