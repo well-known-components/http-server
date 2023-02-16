@@ -8,8 +8,7 @@ INSPECT = --inspect --inspect-brk
 endif
 
 install:
-	npm ci
-	
+	npm ci	
 
 build:
 	./node_modules/.bin/tsc -p tsconfig.json

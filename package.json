@@ -1,6 +1,6 @@
 {
   "name": "@well-known-components/http-server",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "description": "http server component",
   "main": "dist/index.js",
   "typings": "dist/index.d.ts",
