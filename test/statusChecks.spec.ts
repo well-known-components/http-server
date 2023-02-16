@@ -1,4 +1,4 @@
-import { describeE2EWithStatusChecks } from "./test-e2e-express-server"
+import { describeE2EWithStatusChecks } from "./test-e2e-harness"
 import { TestComponents, TestComponentsWithStatus } from "./test-helpers"
 
 describeE2EWithStatusChecks("statusChecks", function ({ components }: { components: TestComponentsWithStatus }) {

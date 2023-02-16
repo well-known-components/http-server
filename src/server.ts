@@ -43,27 +43,6 @@ export async function createServerComponent<Context extends object>(
 
   let handlerFn: http.RequestListener = handler
 
-  if (!options.disableExpress) {
-    const cors = await import("cors")
-    const compression = await import("compression")
-    const express = await import("express")
-
-    // server
-    const app = express.default()
-    // configure cors and compression
-    // TODO: set HTTP_SERVER_CORS_[ENABLE,ORIGIN,METHOD,...] to enable and configure
-    if (options.cors) {
-      app.use(cors.default(options.cors))
-    }
-    // TODO: set HTTP_SERVER_COMPRESSION_[ENABLE,...] to enable and configure
-    if (options.compression) {
-      app.use(compression.default(options.compression))
-    }
-    app.disable("x-powered-by")
-    app.use(handler)
-    handlerFn = app
-  }
-
   const server = getServer(options, handlerFn)
 
   let listen: Promise<typeof server> | undefined
