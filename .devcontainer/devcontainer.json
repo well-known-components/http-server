@@ -1,4 +1,3 @@
 {
-  "build": { "dockerfile": "Dockerfile" },
-  "forwardPorts": [5000]
+  "build": { "dockerfile": "Dockerfile" }
 }
