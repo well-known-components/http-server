@@ -130,7 +130,7 @@ function configureExposedHeaders(options: CorsOptions, req: Request, headers: He
 
 function configureMaxAge(options: CorsOptions, req: Request, headers: Headers) {
   if (options.maxAge !== undefined) {
-    headers.set('Access-Control-Max-Age', maxAge.toString())
+    headers.set('Access-Control-Max-Age', options.maxAge.toString())
   }
 }
 
