@@ -2,6 +2,7 @@ import type { IConfigComponent, ILoggerComponent } from "@well-known-components/
 import type * as http from "http"
 import type * as https from "https"
 import type { Socket } from "net"
+import { CorsOptions } from "./cors"
 
 /**
  * @alpha
@@ -28,7 +29,9 @@ export type ServerComponents = {
 /**
  * @public
  */
-export type IHttpServerOptions = ({ https: https.ServerOptions } | { http: http.ServerOptions })
+export type IHttpServerOptions = {
+  cors?: CorsOptions
+} & ({ https: https.ServerOptions } | { http: http.ServerOptions })
 
 /**
  * @public

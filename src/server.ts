@@ -12,6 +12,7 @@ import { createServerTerminator } from "./terminator"
 import { Socket } from "net"
 import { getWebSocketCallback } from "./ws"
 import destroy from "destroy"
+import { createCorsMiddleware } from "./cors"
 
 /**
  * @public
@@ -42,6 +43,8 @@ export async function createServerComponent<Context extends object>(
   const host = await config.requireString("HTTP_SERVER_HOST")
 
   let handlerFn: http.RequestListener = handler
+
+
 
   const server = getServer(options, handlerFn)
 
@@ -167,6 +170,10 @@ export async function createServerComponent<Context extends object>(
     if (!server) throw new Error("The server is stopped")
     return (await listen) || server!
   })
+
+  if (options.cors) {
+    ret.use(createCorsMiddleware(options.cors))
+  }
 
   return ret
 }

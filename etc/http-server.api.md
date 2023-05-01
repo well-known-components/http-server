@@ -52,7 +52,9 @@ export type IFetchComponent = {
 };
 
 // @public (undocumented)
-export type IHttpServerOptions = ({
+export type IHttpServerOptions = {
+    cors?: CorsOptions;
+} & ({
     https: https.ServerOptions;
 } | {
     http: http.ServerOptions;
@@ -176,7 +178,8 @@ export interface WebSocketServer {
 // Warnings were encountered during analysis:
 //
 // dist/router.d.ts:20:5 - (ae-forgotten-export) The symbol "Layer" needs to be exported by the entry point index.d.ts
-// dist/types.d.ts:22:5 - (ae-incompatible-release-tags) The symbol "ws" is marked as @public, but its signature references "WebSocketServer" which is marked as @alpha
+// dist/types.d.ts:23:5 - (ae-incompatible-release-tags) The symbol "ws" is marked as @public, but its signature references "WebSocketServer" which is marked as @alpha
+// dist/types.d.ts:29:5 - (ae-forgotten-export) The symbol "CorsOptions" needs to be exported by the entry point index.d.ts
 
 // (No @packageDocumentation comment for this package)
 
