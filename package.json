@@ -24,7 +24,7 @@
     "@microsoft/api-extractor": "^7.34.4",
     "@types/busboy": "^1.5.0",
     "@types/destroy": "^1.0.0",
-    "@types/node": "^18.13.0",
+    "@types/node": "^20.3.2",
     "@types/on-finished": "^2.3.1",
     "@types/ws": "^8.5.4",
     "@well-known-components/env-config-provider": "^1.1.1",
