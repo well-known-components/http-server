@@ -43,7 +43,7 @@
     "fp-future": "^1.0.1",
     "http-errors": "^2.0.0",
     "mitt": "^3.0.0",
-    "node-fetch": "^2.6.9",
+    "node-fetch": "^3.3.1",
     "on-finished": "^2.4.1",
     "path-to-regexp": "^6.2.1"
   },
