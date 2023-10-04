@@ -68,6 +68,7 @@ export type ITestHttpServerComponent<Context extends object> = IHttpServerCompon
 // @public (undocumented)
 export type IUwsHttpServerOptions = {
     compression: boolean;
+    idleTimeout?: number;
 };
 
 // @alpha (undocumented)

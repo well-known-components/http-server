@@ -48,11 +48,11 @@ export async function createUwsHttpServer<Context extends object>(
   const host = await config.requireString("HTTP_SERVER_HOST")
 
   const server: uwslib.TemplatedApp = uwslib
-    .App({
-    })
+    .App({})
     .ws("/*", {
       compression: options.compression ? uwslib.SHARED_COMPRESSOR : uwslib.DISABLED,
       upgrade: wsHandler,
+      idleTimeout: options.idleTimeout ?? 120,
       open(_ws) {
         const ws = _ws as WsUserData
         ws.websocketConnect(ws as any)
