@@ -38,4 +38,5 @@ export type IHttpServerOptions = {
  */
 export type IUwsHttpServerOptions = {
   compression: boolean
+  idleTimeout?: number
 }
