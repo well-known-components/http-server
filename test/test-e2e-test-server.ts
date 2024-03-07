@@ -1,7 +1,7 @@
 import { createConfigComponent } from "@well-known-components/env-config-provider"
 import { createLogComponent } from "@well-known-components/logger"
 import { createRunner } from "@well-known-components/test-helpers"
-import { createTestServerComponent, IFetchComponent, IWebSocketComponent } from "../src"
+import { createTestServerComponent, IWebSocketComponent } from "../src"
 import { TestComponents } from "./test-helpers"
 import wsLib from "ws"
 
@@ -20,7 +20,7 @@ async function initComponents<C extends object>(): Promise<TestComponents> {
 
   const server = createTestServerComponent<C>()
 
-  const fetch = {...server, isUndici: false }
+  const fetch = { ...server, isUndici: false }
 
   const ws: IWebSocketComponent<wsLib.WebSocket> = {
     createWebSocket(url: string, protocols?: string | string[]) {

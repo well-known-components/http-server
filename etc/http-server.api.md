@@ -6,11 +6,11 @@
 
 /// <reference types="node" />
 
-import * as fetch_2 from 'node-fetch';
 import type * as http from 'http';
 import type * as https from 'https';
 import { IBaseComponent } from '@well-known-components/interfaces';
 import { IConfigComponent } from '@well-known-components/interfaces';
+import { IFetchComponent } from '@well-known-components/interfaces';
 import { IHttpServerComponent } from '@well-known-components/interfaces';
 import type { ILoggerComponent } from '@well-known-components/interfaces';
 import { IMiddlewareAdapterHandler } from '@well-known-components/interfaces';
@@ -44,12 +44,6 @@ export type FullHttpServerComponent<Context extends object> = IHttpServerCompone
 
 // @public (undocumented)
 export function getUnderlyingServer<T>(server: IHttpServerComponent<any>): Promise<T>;
-
-// @public (undocumented)
-export type IFetchComponent = {
-    fetch(url: fetch_2.Request): Promise<fetch_2.Response>;
-    fetch(url: fetch_2.RequestInfo, init?: fetch_2.RequestInit): Promise<fetch_2.Response>;
-};
 
 // @public (undocumented)
 export type IHttpServerOptions = {

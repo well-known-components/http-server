@@ -1,18 +1,19 @@
 import {
   IBaseComponent,
   IConfigComponent,
+  IFetchComponent,
   IHttpServerComponent,
   ILoggerComponent,
   IStatusCheckCapableComponent,
 } from "@well-known-components/interfaces"
-import { IFetchComponent, IWebSocketComponent } from "../src"
+import { IWebSocketComponent } from "../src"
 import wsLib from "ws"
 
 export type TestComponents = {
   server: IHttpServerComponent<{}> & { resetMiddlewares(): void }
   logs: ILoggerComponent
   config: IConfigComponent
-  fetch: IFetchComponent & {isUndici: boolean}
+  fetch: IFetchComponent & { isUndici: boolean }
   ws: IWebSocketComponent<wsLib.WebSocket>
 }
 
@@ -30,7 +31,6 @@ export type MockedLifecycleComponent = IBaseComponent &
     setStartupProbe(result: Promise<boolean>): void
     setReadynessProbe(result: Promise<boolean>): void
   }
-
 
 export function timeout(ms: number): Promise<never> {
   return new Promise((_, reject) => setTimeout(reject, ms).unref())
