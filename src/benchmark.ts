@@ -5,7 +5,6 @@ import { createConfigComponent } from "@well-known-components/env-config-provide
 import { createServerComponent } from "./index"
 import { createLogComponent } from "@well-known-components/logger"
 import { readFileSync } from "fs"
-import { createUwsHttpServer } from "./uws"
 
 // Record of components
 type Components = {
@@ -113,12 +112,7 @@ async function initComponents(): Promise<Components> {
     HTTP_SERVER_HOST: "0.0.0.0",
   })
 
-  const server = process.env.UWS
-    ? await createUwsHttpServer<AppContext>({ logs, config }, {})
-    : await createServerComponent<AppContext>(
-        { logs, config },
-        { }
-      )
+  const server = await createServerComponent<AppContext>({ logs, config }, {})
 
   return /*components*/ {
     logs,
