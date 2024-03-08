@@ -13,6 +13,7 @@ import { IConfigComponent } from '@well-known-components/interfaces';
 import { IFetchComponent } from '@well-known-components/interfaces';
 import { IHttpServerComponent } from '@well-known-components/interfaces';
 import type { ILoggerComponent } from '@well-known-components/interfaces';
+import { IMetricsComponent } from '@well-known-components/interfaces';
 import { IMiddlewareAdapterHandler } from '@well-known-components/interfaces';
 import type { IStatusCheckCapableComponent } from '@well-known-components/interfaces';
 import { Key } from 'path-to-regexp';
@@ -45,6 +46,11 @@ export type FullHttpServerComponent<Context extends object> = IHttpServerCompone
 // @public (undocumented)
 export function getUnderlyingServer<T>(server: IHttpServerComponent<any>): Promise<T>;
 
+// Warning: (ae-forgotten-export) The symbol "metrics" needs to be exported by the entry point index.d.ts
+//
+// @public
+export type HttpMetrics = keyof typeof metrics;
+
 // @public (undocumented)
 export type IHttpServerOptions = {
     cors?: CorsOptions;
@@ -55,6 +61,14 @@ export type IHttpServerOptions = {
 });
 
 // @public (undocumented)
+export function instrumentHttpServerWithPromClientRegistry<K extends string>(options: {
+    server: IHttpServerComponent<IHttpServerComponent.DefaultContext<any>>;
+    config: IConfigComponent;
+    metrics: IMetricsComponent<K | HttpMetrics>;
+    registry: PromRegistry;
+}): Promise<void>;
+
+// @public (undocumented)
 export type ITestHttpServerComponent<Context extends object> = IHttpServerComponent<Context> & IFetchComponent & {
     resetMiddlewares(): void;
 };
@@ -62,6 +76,12 @@ export type ITestHttpServerComponent<Context extends object> = IHttpServerCompon
 // @alpha (undocumented)
 export type IWebSocketComponent<W = WebSocket> = {
     createWebSocket(url: string, protocols?: string | string[]): W;
+};
+
+// @public
+export type PromRegistry = {
+    contentType: string;
+    metrics(): Promise<string>;
 };
 
 // @public (undocumented)
