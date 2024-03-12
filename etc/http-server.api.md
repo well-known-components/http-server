@@ -183,9 +183,9 @@ export interface WebSocketServer {
 
 // Warnings were encountered during analysis:
 //
-// src/router.ts:45:3 - (ae-forgotten-export) The symbol "Layer" needs to be exported by the entry point index.d.ts
-// src/types.ts:30:5 - (ae-incompatible-release-tags) The symbol "ws" is marked as @public, but its signature references "WebSocketServer" which is marked as @alpha
-// src/types.ts:36:5 - (ae-forgotten-export) The symbol "CorsOptions" needs to be exported by the entry point index.d.ts
+// dist/router.d.ts:20:5 - (ae-forgotten-export) The symbol "Layer" needs to be exported by the entry point index.d.ts
+// dist/types.d.ts:23:5 - (ae-incompatible-release-tags) The symbol "ws" is marked as @public, but its signature references "WebSocketServer" which is marked as @alpha
+// dist/types.d.ts:29:5 - (ae-forgotten-export) The symbol "CorsOptions" needs to be exported by the entry point index.d.ts
 
 // (No @packageDocumentation comment for this package)
 
