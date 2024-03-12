@@ -44,11 +44,14 @@ export type FullHttpServerComponent<Context extends object> = IHttpServerCompone
 };
 
 // @public (undocumented)
+export function getDefaultHttpMetrics(): IMetricsComponent.MetricsRecordDefinition<HttpMetrics>;
+
+// @public (undocumented)
 export function getUnderlyingServer<T>(server: IHttpServerComponent<any>): Promise<T>;
 
 // Warning: (ae-forgotten-export) The symbol "metrics" needs to be exported by the entry point index.d.ts
 //
-// @public
+// @public (undocumented)
 export type HttpMetrics = keyof typeof metrics;
 
 // @public (undocumented)
@@ -65,7 +68,7 @@ export function instrumentHttpServerWithPromClientRegistry<K extends string>(opt
     server: IHttpServerComponent<IHttpServerComponent.DefaultContext<any>>;
     config: IConfigComponent;
     metrics: IMetricsComponent<K | HttpMetrics>;
-    registry: PromRegistry;
+    registry: IMetricsComponent.Registry;
 }): Promise<void>;
 
 // @public (undocumented)
@@ -76,12 +79,6 @@ export type ITestHttpServerComponent<Context extends object> = IHttpServerCompon
 // @alpha (undocumented)
 export type IWebSocketComponent<W = WebSocket> = {
     createWebSocket(url: string, protocols?: string | string[]): W;
-};
-
-// @public
-export type PromRegistry = {
-    contentType: string;
-    metrics(): Promise<string>;
 };
 
 // @public (undocumented)
