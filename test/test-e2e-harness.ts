@@ -1,13 +1,13 @@
 import { createConfigComponent } from "@well-known-components/env-config-provider"
 import { createLogComponent } from "@well-known-components/logger"
 import { createRunner } from "@well-known-components/test-helpers"
-import nodeFetch, { RequestInit } from "node-fetch"
-import { createServerComponent, createStatusCheckComponent, IFetchComponent, IWebSocketComponent } from "../src"
-import { createUwsHttpServer } from "../src/uws"
+import nodeFetch from "node-fetch"
+import { createServerComponent, createStatusCheckComponent, IWebSocketComponent } from "../src"
 import { createMockedLifecycleComponent } from "./mockedLifecycleComponent"
 import { TestComponents, TestComponentsWithStatus } from "./test-helpers"
 import wsLib, { WebSocketServer } from "ws"
 import * as undici from "undici"
+import { IFetchComponent } from "@well-known-components/interfaces"
 
 let currentPort = 19000
 
@@ -15,14 +15,7 @@ const describeE2ETest = createRunner<TestComponents>({
   async main(program) {
     await program.startComponents()
   },
-  initComponents: createInitComponents({ undici: false, uws: false }),
-})
-
-export const describeE2Euws = createRunner<TestComponents>({
-  async main(program) {
-    await program.startComponents()
-  },
-  initComponents: createInitComponents({ undici: false, uws: true }),
+  initComponents: createInitComponents({ undici: false }),
 })
 
 // creates a "mocha-like" describe function to run tests using the test components
@@ -30,7 +23,6 @@ export const describeE2E: typeof describeE2ETest = (name, fn) => {
   describeE2ETest("(http) " + name, fn)
   describeE2EWithStatusChecks("(http status) " + name, fn)
   describeE2EWithStatusChecksAndUndici("(http undici) " + name, fn)
-  describeE2Euws("(uws) " + name, fn)
 }
 
 export const describeE2EWithStatusChecks = createRunner<TestComponentsWithStatus>({
@@ -38,7 +30,7 @@ export const describeE2EWithStatusChecks = createRunner<TestComponentsWithStatus
     await program.startComponents()
   },
   async initComponents() {
-    return initComponentsWithStatus(false, false)
+    return initComponentsWithStatus(false)
   },
 })
 
@@ -47,11 +39,11 @@ export const describeE2EWithStatusChecksAndUndici = createRunner<TestComponentsW
     await program.startComponents()
   },
   async initComponents() {
-    return initComponentsWithStatus(true, false)
+    return initComponentsWithStatus(true)
   },
 })
 
-function createInitComponents(options: { undici: boolean; uws: boolean }) {
+function createInitComponents(options: { undici: boolean }) {
   return async function initComponents<C extends object>(): Promise<TestComponents> {
     const logs = await createLogComponent({})
 
@@ -62,12 +54,10 @@ function createInitComponents(options: { undici: boolean; uws: boolean }) {
     })
 
     const protocolHostAndProtocol = `http://${await config.requireString(
-      "HTTP_SERVER_HOST"
+      "HTTP_SERVER_HOST",
     )}:${await config.requireNumber("HTTP_SERVER_PORT")}`
 
-    const server = options.uws
-      ? await createUwsHttpServer<C>({ logs, config }, {})
-      : await createServerComponent<C>({ logs, config, ws: new WebSocketServer({ noServer: true }) }, {})
+    const server = await createServerComponent<C>({ logs, config, ws: new WebSocketServer({ noServer: true }) }, {})
 
     const fetch: IFetchComponent & { isUndici: boolean } = {
       async fetch(url: any, initRequest?: any) {
@@ -77,7 +67,7 @@ function createInitComponents(options: { undici: boolean; uws: boolean }) {
           return (options.undici ? undici.fetch : nodeFetch)(url, { ...initRequest }) as any
         }
       },
-      isUndici: !!options.undici
+      isUndici: !!options.undici,
     }
 
     const ws: IWebSocketComponent<wsLib.WebSocket> = {
@@ -94,11 +84,8 @@ function createInitComponents(options: { undici: boolean; uws: boolean }) {
   }
 }
 
-async function initComponentsWithStatus<C extends object>(
-  undici: boolean,
-  uws: boolean
-): Promise<TestComponentsWithStatus> {
-  const components = await createInitComponents({ undici, uws })<C>()
+async function initComponentsWithStatus<C extends object>(undici: boolean): Promise<TestComponentsWithStatus> {
+  const components = await createInitComponents({ undici })<C>()
 
   const status = await createStatusCheckComponent({ server: components.server, config: components.config })
 

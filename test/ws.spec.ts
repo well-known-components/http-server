@@ -1,10 +1,8 @@
 import future from "fp-future"
-import { getUnderlyingServer } from "../src"
 import { Router } from "../src/router"
 import { createTestServerComponent } from "../src/test-component"
 import { upgradeWebSocketResponse } from "../src/ws"
-import { describeE2E, describeE2Euws } from "./test-e2e-harness"
-import { TemplatedApp } from "uWebSockets.js"
+import { describeE2E } from "./test-e2e-harness"
 import { timeout } from "./test-helpers"
 
 describe("upgrade requests with router", () => {
@@ -128,12 +126,5 @@ describeE2E("with real websockets (ws)", ({ components }) => {
     sock.onerror = (x) => didReturnWebSocket.reject(x.error)
 
     await expect(didReturnWebSocket).rejects.toThrow()
-  })
-})
-
-describeE2Euws("uws: sanity", (args) => {
-  it("underlying server is app", async () => {
-    const underlying = await getUnderlyingServer<TemplatedApp>(args.components.server)
-    expect(underlying).toHaveProperty("publish")
   })
 })

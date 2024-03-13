@@ -1,13 +1,8 @@
-import type { IHttpServerComponent, IHttpServerComponent as http } from "@well-known-components/interfaces"
+import type { IHttpServerComponent } from "@well-known-components/interfaces"
 import * as fetch from "node-fetch"
 import { createServerHandler } from "./server-handler"
 import { PassThrough, pipeline, Stream } from "stream"
-
-/** @public */
-export type IFetchComponent = {
-  fetch(url: fetch.Request): Promise<fetch.Response>
-  fetch(url: fetch.RequestInfo, init?: fetch.RequestInit): Promise<fetch.Response>
-}
+import { IFetchComponent } from "@well-known-components/interfaces"
 
 /** @alpha */
 export type IWebSocketComponent<W = WebSocket> = {
@@ -45,7 +40,7 @@ export function createTestServerComponent<Context extends object = {}>(): ITestH
       } else {
         const tempHeaders = new fetch.Headers(initRequest?.headers)
         const hostname = tempHeaders.get("X-Forwarded-Host") || tempHeaders.get("host") || "0.0.0.0"
-        const protocol = tempHeaders.get('X-Forwarded-Proto') == "https" ? 'https' : 'http'
+        const protocol = tempHeaders.get("X-Forwarded-Proto") == "https" ? "https" : "http"
         let newUrl = new URL(protocol + "://" + hostname + url)
         try {
           newUrl = new URL(url, protocol + "://" + hostname)

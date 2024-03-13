@@ -13,7 +13,7 @@ export interface WebSocketServer {
     request: http.IncomingMessage,
     socket: Socket,
     upgradeHead: Buffer,
-    callback: (client: any, request: http.IncomingMessage) => void
+    callback: (client: any, request: http.IncomingMessage) => void,
   ): void
 }
 
@@ -32,11 +32,3 @@ export type ServerComponents = {
 export type IHttpServerOptions = {
   cors?: CorsOptions
 } & ({ https: https.ServerOptions } | { http: http.ServerOptions })
-
-/**
- * @public
- */
-export type IUwsHttpServerOptions = {
-  compression: boolean
-  idleTimeout?: number
-}

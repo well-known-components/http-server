@@ -6,13 +6,14 @@
 
 /// <reference types="node" />
 
-import * as fetch_2 from 'node-fetch';
 import type * as http from 'http';
 import type * as https from 'https';
 import { IBaseComponent } from '@well-known-components/interfaces';
 import { IConfigComponent } from '@well-known-components/interfaces';
+import { IFetchComponent } from '@well-known-components/interfaces';
 import { IHttpServerComponent } from '@well-known-components/interfaces';
 import type { ILoggerComponent } from '@well-known-components/interfaces';
+import { IMetricsComponent } from '@well-known-components/interfaces';
 import { IMiddlewareAdapterHandler } from '@well-known-components/interfaces';
 import type { IStatusCheckCapableComponent } from '@well-known-components/interfaces';
 import { Key } from 'path-to-regexp';
@@ -43,13 +44,15 @@ export type FullHttpServerComponent<Context extends object> = IHttpServerCompone
 };
 
 // @public (undocumented)
-export function getUnderlyingServer<T>(server: IHttpServerComponent<any>): Promise<T>;
+export function getDefaultHttpMetrics(): IMetricsComponent.MetricsRecordDefinition<HttpMetrics>;
 
 // @public (undocumented)
-export type IFetchComponent = {
-    fetch(url: fetch_2.Request): Promise<fetch_2.Response>;
-    fetch(url: fetch_2.RequestInfo, init?: fetch_2.RequestInit): Promise<fetch_2.Response>;
-};
+export function getUnderlyingServer<T>(server: IHttpServerComponent<any>): Promise<T>;
+
+// Warning: (ae-forgotten-export) The symbol "metrics" needs to be exported by the entry point index.d.ts
+//
+// @public (undocumented)
+export type HttpMetrics = keyof typeof metrics;
 
 // @public (undocumented)
 export type IHttpServerOptions = {
@@ -61,14 +64,16 @@ export type IHttpServerOptions = {
 });
 
 // @public (undocumented)
-export type ITestHttpServerComponent<Context extends object> = IHttpServerComponent<Context> & IFetchComponent & {
-    resetMiddlewares(): void;
-};
+export function instrumentHttpServerWithPromClientRegistry<K extends string>(options: {
+    server: IHttpServerComponent<IHttpServerComponent.DefaultContext<any>>;
+    config: IConfigComponent;
+    metrics: IMetricsComponent<K | HttpMetrics>;
+    registry: IMetricsComponent.Registry;
+}): Promise<void>;
 
 // @public (undocumented)
-export type IUwsHttpServerOptions = {
-    compression: boolean;
-    idleTimeout?: number;
+export type ITestHttpServerComponent<Context extends object> = IHttpServerComponent<Context> & IFetchComponent & {
+    resetMiddlewares(): void;
 };
 
 // @alpha (undocumented)
