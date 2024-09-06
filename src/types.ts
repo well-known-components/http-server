@@ -31,4 +31,5 @@ export type ServerComponents = {
  */
 export type IHttpServerOptions = {
   cors?: CorsOptions
+  proxyHandler?: (request: http.IncomingMessage, response: http.ServerResponse, next: () => void) => Promise<void>
 } & ({ https: https.ServerOptions } | { http: http.ServerOptions })

@@ -159,17 +159,25 @@ export async function createServerComponent<Context extends object>(
   }
 
   function handler(request: http.IncomingMessage, response: http.ServerResponse) {
-    asyncHandle(request, response).catch((error) => {
+    const handleError = (error: any) => {
       logger.error(error)
-
-      if (error.code == "ERR_INVALID_URL") {
+  
+      if (error.code === 'ERR_INVALID_URL') {
         response.statusCode = 404
-        response.end()
       } else {
         response.statusCode = 500
-        response.end()
       }
-    })
+      response.end()
+    }
+
+    if (options.proxyHandler) {
+      options.proxyHandler(request, response, () => {
+          asyncHandle(request, response)
+        })
+        .catch(handleError)
+    } else {
+      asyncHandle(request, response).catch(handleError)
+    }
   }
 
   _setUnderlyingServer(ret, async () => {
