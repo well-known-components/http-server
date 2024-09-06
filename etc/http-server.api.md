@@ -57,6 +57,7 @@ export type HttpMetrics = keyof typeof metrics;
 // @public (undocumented)
 export type IHttpServerOptions = {
     cors?: CorsOptions;
+    proxyHandler?: (request: http.IncomingMessage, response: http.ServerResponse, next: () => void) => Promise<void>;
 } & ({
     https: https.ServerOptions;
 } | {
