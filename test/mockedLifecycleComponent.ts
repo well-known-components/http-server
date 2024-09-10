@@ -1,5 +1,5 @@
-import future from "fp-future"
-import { MockedLifecycleComponent } from "./test-helpers"
+import future from 'fp-future'
+import { MockedLifecycleComponent } from './test-helpers'
 
 export function createMockedLifecycleComponent(): MockedLifecycleComponent {
   const startupProbe = future<boolean>()
@@ -33,6 +33,6 @@ export function createMockedLifecycleComponent(): MockedLifecycleComponent {
     },
     setStartupProbe(p) {
       p.then(startupProbe.resolve)
-    },
+    }
   }
 }

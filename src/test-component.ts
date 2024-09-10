@@ -1,8 +1,8 @@
-import type { IHttpServerComponent } from "@well-known-components/interfaces"
-import * as fetch from "node-fetch"
-import { createServerHandler } from "./server-handler"
-import { PassThrough, pipeline, Stream } from "stream"
-import { IFetchComponent } from "@well-known-components/interfaces"
+import type { IHttpServerComponent } from '@well-known-components/interfaces'
+import * as fetch from 'node-fetch'
+import { createServerHandler } from './server-handler'
+import { PassThrough, pipeline, Stream } from 'stream'
+import { IFetchComponent } from '@well-known-components/interfaces'
 
 /** @alpha */
 export type IWebSocketComponent<W = WebSocket> = {
@@ -39,11 +39,11 @@ export function createTestServerComponent<Context extends object = {}>(): ITestH
         req = url
       } else {
         const tempHeaders = new fetch.Headers(initRequest?.headers)
-        const hostname = tempHeaders.get("X-Forwarded-Host") || tempHeaders.get("host") || "0.0.0.0"
-        const protocol = tempHeaders.get("X-Forwarded-Proto") == "https" ? "https" : "http"
-        let newUrl = new URL(protocol + "://" + hostname + url)
+        const hostname = tempHeaders.get('X-Forwarded-Host') || tempHeaders.get('host') || '0.0.0.0'
+        const protocol = tempHeaders.get('X-Forwarded-Proto') == 'https' ? 'https' : 'http'
+        let newUrl = new URL(protocol + '://' + hostname + url)
         try {
-          newUrl = new URL(url, protocol + "://" + hostname)
+          newUrl = new URL(url, protocol + '://' + hostname)
         } catch {}
         req = new fetch.Request(newUrl.toString(), initRequest)
       }
@@ -62,14 +62,14 @@ export function createTestServerComponent<Context extends object = {}>(): ITestH
         return res
       } catch (error: any) {
         console.error(error)
-        return new fetch.Response("DEV-SERVER-ERROR: " + (error.stack || error.toString()), { status: 500 })
+        return new fetch.Response('DEV-SERVER-ERROR: ' + (error.stack || error.toString()), { status: 500 })
       }
     },
     use: serverHandler.use,
     setContext(ctx) {
       currentContext = Object.create(ctx)
     },
-    resetMiddlewares: serverHandler.resetMiddlewares,
+    resetMiddlewares: serverHandler.resetMiddlewares
   }
   return ret
 }

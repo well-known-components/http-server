@@ -1,4 +1,4 @@
-import { IHttpServerComponent as http, IMiddlewareAdapterHandler } from "@well-known-components/interfaces"
+import { IHttpServerComponent as http, IMiddlewareAdapterHandler } from '@well-known-components/interfaces'
 
 /**
  * @public
@@ -9,10 +9,10 @@ export type Middleware<Ctx> = IMiddlewareAdapterHandler<Ctx, http.IResponse>
  * @public
  */
 export function compose<Ctx>(...middlewares: Middleware<Ctx>[]): Middleware<Ctx> {
-  if (!Array.isArray(middlewares)) throw new TypeError("Middleware stack must be an array!")
+  if (!Array.isArray(middlewares)) throw new TypeError('Middleware stack must be an array!')
 
   for (const fn of middlewares) {
-    if (typeof fn !== "function") throw new TypeError("Middleware must be composed of functions!")
+    if (typeof fn !== 'function') throw new TypeError('Middleware must be composed of functions!')
   }
 
   if (middlewares.length == 1) {
@@ -25,7 +25,7 @@ export function compose<Ctx>(...middlewares: Middleware<Ctx>[]): Middleware<Ctx>
     return dispatch(0)
     async function dispatch(i: number): Promise<http.IResponse> {
       if (i <= index) {
-        throw new Error("next() called multiple times")
+        throw new Error('next() called multiple times')
       }
       index = i
       let fn: Middleware<Ctx> | undefined = middlewares[i]

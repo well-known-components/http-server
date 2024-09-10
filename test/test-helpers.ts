@@ -4,10 +4,10 @@ import {
   IFetchComponent,
   IHttpServerComponent,
   ILoggerComponent,
-  IStatusCheckCapableComponent,
-} from "@well-known-components/interfaces"
-import { IWebSocketComponent } from "../src"
-import wsLib from "ws"
+  IStatusCheckCapableComponent
+} from '@well-known-components/interfaces'
+import { IWebSocketComponent } from '../src'
+import wsLib from 'ws'
 
 export type TestComponents = {
   server: IHttpServerComponent<{}> & { resetMiddlewares(): void }

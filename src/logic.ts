@@ -1,14 +1,14 @@
-import * as fetch from "node-fetch"
-import { Stream } from "stream"
-import * as http from "http"
-import * as https from "https"
-import destroy from "destroy"
-import onFinished from "on-finished"
-import type { IHttpServerComponent } from "@well-known-components/interfaces"
-import type { IHttpServerOptions } from "./types"
-import { HttpError } from "http-errors"
-import { Middleware } from "./middleware"
-import { getWebSocketCallback, upgradeWebSocketResponse, withWebSocketCallback } from "./ws"
+import * as fetch from 'node-fetch'
+import { Stream } from 'stream'
+import * as http from 'http'
+import * as https from 'https'
+import destroy from 'destroy'
+import onFinished from 'on-finished'
+import type { IHttpServerComponent } from '@well-known-components/interfaces'
+import type { IHttpServerOptions } from './types'
+import { HttpError } from 'http-errors'
+import { Middleware } from './middleware'
+import { getWebSocketCallback, upgradeWebSocketResponse, withWebSocketCallback } from './ws'
 
 /**
  * @internal
@@ -17,8 +17,8 @@ export function getServer(
   options: Partial<IHttpServerOptions>,
   listener: http.RequestListener
 ): http.Server | https.Server {
-  if ("https" in options && options.https) return https.createServer(options.https, listener)
-  if ("http" in options && options.http) return http.createServer(options.http, listener)
+  if ('https' in options && options.https) return https.createServer(options.https, listener)
+  if ('http' in options && options.http) return http.createServer(options.http, listener)
   return http.createServer(listener)
 }
 
@@ -31,11 +31,11 @@ const NAME = Symbol.toStringTag
 export const isBlob = (object: any): object is Blob => {
   return (
     object !== null &&
-    typeof object === "object" &&
-    typeof object.arrayBuffer === "function" &&
-    typeof object.type === "string" &&
-    typeof object.stream === "function" &&
-    typeof object.constructor === "function" &&
+    typeof object === 'object' &&
+    typeof object.arrayBuffer === 'function' &&
+    typeof object.type === 'string' &&
+    typeof object.stream === 'function' &&
+    typeof object.constructor === 'function' &&
     /^(Blob|File)$/.test(object[NAME])
   )
 }
@@ -68,14 +68,14 @@ export function success(data: fetch.Response, res: http.ServerResponse) {
     // } else {
     //   ;(blob.stream() as any).pipe(res)
     // }
-    throw new Error("Unknown response body (Blob)")
+    throw new Error('Unknown response body (Blob)')
   } else if (body && body.pipe) {
     body.pipe(res)
 
     // Note: for context about why this is necessary, check https://github.com/nodejs/node/issues/1180
     onFinished(res, () => destroy(body))
   } else if (body !== undefined && body !== null) {
-    throw new Error("Unknown response body")
+    throw new Error('Unknown response body')
   } else {
     res.end()
   }
@@ -95,7 +95,7 @@ export const getRequestFromNodeMessage = <T extends http.IncomingMessage & { ori
   for (let key in request.headers) {
     if (request.headers.hasOwnProperty(key)) {
       const h = request.headers[key]
-      if (typeof h == "string") {
+      if (typeof h == 'string') {
         headers.append(key, h)
       } else if (Array.isArray(h)) {
         h.forEach(($) => headers.append(key, $))
@@ -105,15 +105,15 @@ export const getRequestFromNodeMessage = <T extends http.IncomingMessage & { ori
 
   const requestInit: fetch.RequestInit = {
     headers: headers,
-    method: request.method!.toUpperCase(),
+    method: request.method!.toUpperCase()
   }
 
-  if (requestInit.method != "GET" && requestInit.method != "HEAD") {
+  if (requestInit.method != 'GET' && requestInit.method != 'HEAD') {
     requestInit.body = request
   }
 
-  const protocol = headers.get("X-Forwarded-Proto") == "https" ? "https" : "http"
-  const baseUrl = protocol + "://" + (headers.get("X-Forwarded-Host") || headers.get("host") || host || "0.0.0.0")
+  const protocol = headers.get('X-Forwarded-Proto') == 'https' ? 'https' : 'http'
+  const baseUrl = protocol + '://' + (headers.get('X-Forwarded-Host') || headers.get('host') || host || '0.0.0.0')
 
   // Note: Express.js overwrite `req.url` freely for internal routing
   // purposes and retains the original value on `req.originalUrl`
@@ -134,12 +134,12 @@ export const coerceErrorsMiddleware: Middleware<any> = async (_, next) => {
   } catch (e: any) {
     if (
       e instanceof HttpError ||
-      (("status" in e || "statusCode" in e) && (typeof e.status == "number" || typeof e.statusCode == "number"))
+      (('status' in e || 'statusCode' in e) && (typeof e.status == 'number' || typeof e.statusCode == 'number'))
     ) {
       return {
         status: e.status || e.statusCode,
         body: e.body || e.message,
-        headers: e.headers,
+        headers: e.headers
       }
     }
     throw e
@@ -152,10 +152,10 @@ function respondBuffer(
   mutableHeaders: fetch.Headers
 ): fetch.Response {
   // TODO: test
-  mutableHeaders.set("Content-Length", buffer.byteLength.toFixed())
+  mutableHeaders.set('Content-Length', buffer.byteLength.toFixed())
   return new fetch.Response(buffer, {
     ...(response as fetch.ResponseInit),
-    headers: mutableHeaders,
+    headers: mutableHeaders
   })
 }
 
@@ -165,8 +165,8 @@ function respondJson(
   mutableHeaders: fetch.Headers
 ): fetch.Response {
   // TODO: test
-  if (!mutableHeaders.has("content-type")) {
-    mutableHeaders.set("content-type", "application/json")
+  if (!mutableHeaders.has('content-type')) {
+    mutableHeaders.set('content-type', 'application/json')
   }
   return respondString(JSON.stringify(json), response, mutableHeaders)
 }
@@ -178,11 +178,11 @@ function respondString(
 ): fetch.Response {
   // TODO: test
   // TODO: accept encoding
-  const returnEncoding = "utf-8"
+  const returnEncoding = 'utf-8'
   const retBuffer = Buffer.from(txt, returnEncoding)
 
-  if (!mutableHeaders.has("content-type")) {
-    mutableHeaders.set("content-type", `text/plain; charset=${returnEncoding}`)
+  if (!mutableHeaders.has('content-type')) {
+    mutableHeaders.set('content-type', `text/plain; charset=${returnEncoding}`)
   }
 
   return respondBuffer(retBuffer, response, mutableHeaders)
@@ -190,7 +190,7 @@ function respondString(
 
 const initialResponse: IHttpServerComponent.IResponse = {
   status: 404,
-  body: "Not found",
+  body: 'Not found'
 }
 
 /**
@@ -208,7 +208,7 @@ export function normalizeResponseBody(
 ): fetch.Response {
   if (!response) {
     // Not Implemented
-    return new fetch.Response(undefined, { status: 501, statusText: "Server did not produce a valid response" })
+    return new fetch.Response(undefined, { status: 501, statusText: 'Server did not produce a valid response' })
   }
 
   if (response.status == 101) {
@@ -220,22 +220,22 @@ export function normalizeResponseBody(
     return new fetch.Response(response.body, {
       headers: response.headers,
       status: response.status,
-      statusText: response.statusText,
+      statusText: response.statusText
     })
   }
 
   const is1xx = response.status && response.status >= 100 && response.status < 200
   const is204 = response.status == 204
   const is304 = response.status == 304
-  const isHEAD = request.method == "HEAD"
+  const isHEAD = request.method == 'HEAD'
 
   const mutableHeaders = new fetch.Headers(response.headers as fetch.HeadersInit)
 
   if (is204 || is304) {
     // TODO: TEST this code path
-    mutableHeaders.delete("Content-Type")
-    mutableHeaders.delete("Content-Length")
-    mutableHeaders.delete("Transfer-Encoding")
+    mutableHeaders.delete('Content-Type')
+    mutableHeaders.delete('Content-Length')
+    mutableHeaders.delete('Transfer-Encoding')
   }
 
   // https://www.w3.org/Protocols/rfc2616/rfc2616-sec4.html#sec4.4
@@ -249,7 +249,7 @@ export function normalizeResponseBody(
     return respondBuffer(response.body, response, mutableHeaders)
   } else if (response.body instanceof ArrayBuffer || response.body instanceof Uint8Array) {
     return respondBuffer(response.body, response, mutableHeaders)
-  } else if (typeof response.body == "string") {
+  } else if (typeof response.body == 'string') {
     return respondString(response.body, response, mutableHeaders)
   } else if (response.body instanceof Stream) {
     return new fetch.Response(response.body, response as fetch.ResponseInit)
@@ -261,8 +261,8 @@ export function normalizeResponseBody(
   // Applications SHOULD use this field to indicate the transfer-length of the
   // message-body, unless this is prohibited by the rules in section 4.4.
   // (https://www.w3.org/Protocols/rfc2616/rfc2616-sec4.html#sec4.4)
-  if (!mutableHeaders.has("content-length")) {
-    mutableHeaders.set("content-length", "0")
+  if (!mutableHeaders.has('content-length')) {
+    mutableHeaders.set('content-length', '0')
   }
 
   return new fetch.Response(undefined, { ...(response as fetch.ResponseInit), headers: mutableHeaders })

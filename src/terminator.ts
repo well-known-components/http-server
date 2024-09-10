@@ -1,13 +1,13 @@
 // Based on work of https://github.com/gajus/http-terminator
 
-import type { ILoggerComponent } from "@well-known-components/interfaces"
-import future, { IFuture } from "fp-future"
-import http from "http"
-import https from "https"
-import type { Duplex } from "stream"
+import type { ILoggerComponent } from '@well-known-components/interfaces'
+import future, { IFuture } from 'fp-future'
+import http from 'http'
+import https from 'https'
+import type { Duplex } from 'stream'
 
 const configurationDefaults: HttpTerminatorConfigurationInput = {
-  gracefulTerminationTimeout: 1_000,
+  gracefulTerminationTimeout: 1_000
 }
 
 function delay(ms: number) {
@@ -31,7 +31,7 @@ export function createServerTerminator(
 
   const configuration: HttpTerminatorConfigurationInput = {
     ...configurationDefaults,
-    ...configurationInput,
+    ...configurationInput
   }
 
   const sockets = new Set<Socket>()
@@ -39,25 +39,25 @@ export function createServerTerminator(
 
   let terminating: IFuture<void> | undefined
 
-  server.on("connection", (socket) => {
+  server.on('connection', (socket) => {
     if (terminating) {
       socket.destroy()
     } else {
       sockets.add(socket)
 
-      socket.once("close", () => {
+      socket.once('close', () => {
         sockets.delete(socket)
       })
     }
   })
 
-  server.on("secureConnection", (socket) => {
+  server.on('secureConnection', (socket) => {
     if (terminating) {
       socket.destroy()
     } else {
       secureSockets.add(socket)
 
-      socket.once("close", () => {
+      socket.once('close', () => {
         secureSockets.delete(socket)
       })
     }
@@ -80,16 +80,16 @@ export function createServerTerminator(
 
   const terminate = async () => {
     if (terminating) {
-      logger.warn("Already terminating HTTP server")
+      logger.warn('Already terminating HTTP server')
 
       return terminating
     }
 
     terminating = future<void>()
 
-    server.on("request", (incomingMessage, outgoingMessage) => {
+    server.on('request', (incomingMessage, outgoingMessage) => {
       if (!outgoingMessage.headersSent) {
-        outgoingMessage.setHeader("connection", "close")
+        outgoingMessage.setHeader('connection', 'close')
       }
     })
 
@@ -105,7 +105,7 @@ export function createServerTerminator(
 
       if (serverResponse) {
         if (!serverResponse.headersSent) {
-          serverResponse.setHeader("connection", "close")
+          serverResponse.setHeader('connection', 'close')
         }
 
         continue
@@ -120,7 +120,7 @@ export function createServerTerminator(
 
       if (serverResponse) {
         if (!serverResponse.headersSent) {
-          serverResponse.setHeader("connection", "close")
+          serverResponse.setHeader('connection', 'close')
         }
 
         continue
@@ -159,6 +159,6 @@ export function createServerTerminator(
   return {
     secureSockets,
     sockets,
-    terminate,
+    terminate
   }
 }

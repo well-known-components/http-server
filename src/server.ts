@@ -1,18 +1,18 @@
 import type {
   IBaseComponent,
   IHttpServerComponent,
-  IStatusCheckCapableComponent,
-} from "@well-known-components/interfaces"
-import { _setUnderlyingServer } from "./injectors"
-import { getServer, success, getRequestFromNodeMessage } from "./logic"
-import type { ServerComponents, IHttpServerOptions } from "./types"
-import { createServerHandler } from "./server-handler"
-import * as http from "http"
-import { createServerTerminator } from "./terminator"
-import { Socket } from "net"
-import { getWebSocketCallback } from "./ws"
-import destroy from "destroy"
-import { createCorsMiddleware } from "./cors"
+  IStatusCheckCapableComponent
+} from '@well-known-components/interfaces'
+import { _setUnderlyingServer } from './injectors'
+import { getServer, success, getRequestFromNodeMessage } from './logic'
+import type { ServerComponents, IHttpServerOptions } from './types'
+import { createServerHandler } from './server-handler'
+import * as http from 'http'
+import { createServerTerminator } from './terminator'
+import { Socket } from 'net'
+import { getWebSocketCallback } from './ws'
+import destroy from 'destroy'
+import { createCorsMiddleware } from './cors'
 
 /**
  * @public
@@ -36,15 +36,13 @@ export async function createServerComponent<Context extends object>(
   options: Partial<IHttpServerOptions>
 ): Promise<FullHttpServerComponent<Context>> {
   const { config, logs, ws } = components
-  const logger = logs.getLogger("http-server")
+  const logger = logs.getLogger('http-server')
 
   // config
-  const port = await config.requireNumber("HTTP_SERVER_PORT")
-  const host = await config.requireString("HTTP_SERVER_HOST")
+  const port = await config.requireNumber('HTTP_SERVER_PORT')
+  const host = await config.requireString('HTTP_SERVER_HOST')
 
   let handlerFn: http.RequestListener = handler
-
-
 
   const server = getServer(options, handlerFn)
 
@@ -54,7 +52,7 @@ export async function createServerComponent<Context extends object>(
 
   async function start(): Promise<void> {
     if (listen) {
-      logger.error("start() called more than once")
+      logger.error('start() called more than once')
       await listen
       return
     }
@@ -65,16 +63,16 @@ export async function createServerComponent<Context extends object>(
         reject(err)
       }
 
-      server.once("error", errorHandler).listen(port, host, () => {
+      server.once('error', errorHandler).listen(port, host, () => {
         // logger.log(`Listening ${host}:${port}`)
         // resolve(server)
         // server!.off("error", errorHandler)
       })
 
-      server.once("listening", () => {
+      server.once('listening', () => {
         logger.log(`Listening ${host}:${port}`)
         resolve(server)
-        server!.off("error", errorHandler)
+        server!.off('error', errorHandler)
       })
     })
 
@@ -109,7 +107,7 @@ export async function createServerComponent<Context extends object>(
     },
 
     // extra
-    resetMiddlewares: serverHandler.resetMiddlewares,
+    resetMiddlewares: serverHandler.resetMiddlewares
   }
 
   async function asyncHandle(req: http.IncomingMessage, res: http.ServerResponse) {
@@ -121,7 +119,7 @@ export async function createServerComponent<Context extends object>(
 
   async function handleUpgrade(req: http.IncomingMessage, socket: Socket, head: Buffer) {
     if (!ws) {
-      throw new Error("No WebSocketServer present")
+      throw new Error('No WebSocketServer present')
     }
 
     const request = getRequestFromNodeMessage(req, host)
@@ -141,7 +139,7 @@ export async function createServerComponent<Context extends object>(
     } else {
       if (response.status) {
         const statusCode = isNaN(response.status) ? 404 : response.status
-        const statusText = http.STATUS_CODES[statusCode] || "Not Found"
+        const statusText = http.STATUS_CODES[statusCode] || 'Not Found'
         socket.end(`HTTP/${req.httpVersion} ${statusCode} ${statusText}\r\n\r\n`)
       } else {
         socket.end()
@@ -150,7 +148,7 @@ export async function createServerComponent<Context extends object>(
   }
 
   if (ws) {
-    server.on("upgrade", (req: http.IncomingMessage, socket: Socket, head: Buffer) => {
+    server.on('upgrade', (req: http.IncomingMessage, socket: Socket, head: Buffer) => {
       return handleUpgrade(req, socket, head).catch((err) => {
         logger.error(err)
         destroy(socket)
@@ -162,7 +160,7 @@ export async function createServerComponent<Context extends object>(
     asyncHandle(request, response).catch((error) => {
       logger.error(error)
 
-      if (error.code == "ERR_INVALID_URL") {
+      if (error.code == 'ERR_INVALID_URL') {
         response.statusCode = 404
         response.end()
       } else {
@@ -173,7 +171,7 @@ export async function createServerComponent<Context extends object>(
   }
 
   _setUnderlyingServer(ret, async () => {
-    if (!server) throw new Error("The server is stopped")
+    if (!server) throw new Error('The server is stopped')
     return (await listen) || server!
   })
 

@@ -72,7 +72,7 @@ export async function wireTestServerComponents<T>(context: TestServerAppContext<
  * Creates a test server and returns all the components and helpers
  */
 export async function initTestServerComponents(): Promise<TestServerComponents<any>> {
-  const config = createConfigComponent({...defaultServerConfig(), LOG_LEVEL: "INFO"})
+  const config = createConfigComponent({ ...defaultServerConfig(), LOG_LEVEL: 'INFO' })
 
   const logs = await createLogComponent({ config })
 
@@ -85,7 +85,7 @@ export async function initTestServerComponents(): Promise<TestServerComponents<a
   }
 
   const getUrl = async (url: string) => {
-    return await getBaseUrl() + url
+    return (await getBaseUrl()) + url
   }
 
   return {
@@ -94,6 +94,6 @@ export async function initTestServerComponents(): Promise<TestServerComponents<a
     getBaseUrl,
     getUrl,
     router,
-    server,
+    server
   }
 }
