@@ -1,7 +1,7 @@
-import { IHttpServerComponent as http } from "@well-known-components/interfaces"
-import { pathToRegexp, Key } from "path-to-regexp"
-import { Middleware } from "./middleware"
-import { RoutedContext } from "./router"
+import { IHttpServerComponent as http } from '@well-known-components/interfaces'
+import { pathToRegexp, Key } from 'path-to-regexp'
+import { Middleware } from './middleware'
+import { RoutedContext } from './router'
 
 export type LayerOptions = Partial<{
   name: string
@@ -47,21 +47,23 @@ export class Layer<Context, Path extends string> {
 
     for (let i = 0; i < methods.length; i++) {
       const l = this.methods.push(methods[i].toUpperCase() as http.HTTPMethod)
-      if (this.methods[l - 1] === "GET") this.methods.unshift("HEAD")
+      if (this.methods[l - 1] === 'GET') this.methods.unshift('HEAD')
     }
 
     // ensure middleware is a function
     for (let i = 0; i < this.stack.length; i++) {
       const fn = this.stack[i]
       const type = typeof fn
-      if (type !== "function")
+      if (type !== 'function')
         throw new Error(
           `${methods.toString()} \`${this.opts.name || path}\`: \`middleware\` must be a function, not \`${type}\``
         )
     }
 
     this.path = path
-    this.regexp = pathToRegexp(path, this.paramNames, this.opts)
+    const result = pathToRegexp(path, this.opts)
+    this.regexp = result
+    this.paramNames = result.keys
   }
 
   /**
@@ -115,9 +117,13 @@ export class Layer<Context, Path extends string> {
 
   setPrefix(prefix: string): this {
     if (this.path) {
-      this.path = this.path !== "/" || this.opts.strict === true ? `${prefix}${this.path}` : prefix
+      this.path = this.path !== '/' || this.opts.strict === true ? `${prefix}${this.path}` : prefix
       this.paramNames = []
-      this.regexp = pathToRegexp(this.path, this.paramNames, this.opts)
+      const result = pathToRegexp(this.path, this.opts)
+      this.regexp = result
+      for (const key of result.keys) {
+        this.paramNames.push(key)
+      }
     }
 
     return this

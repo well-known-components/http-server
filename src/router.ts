@@ -1,9 +1,9 @@
-import HttpError from "http-errors"
-import { Layer, LayerOptions } from "./layer"
-import { Key, pathToRegexp } from "path-to-regexp"
-import type { IHttpServerComponent, IMiddlewareAdapterHandler } from "@well-known-components/interfaces"
-import { compose, Middleware } from "./middleware"
-import { methodsList } from "./methods"
+import HttpError from 'http-errors'
+import { Layer, LayerOptions } from './layer'
+import { Key, pathToRegexp } from 'path-to-regexp'
+import type { IHttpServerComponent, IMiddlewareAdapterHandler } from '@well-known-components/interfaces'
+import { compose, Middleware } from './middleware'
+import { methodsList } from './methods'
 
 /** @public */
 export type RouterOptions = Partial<{
@@ -23,7 +23,7 @@ export type AllowedMethodOptions = Partial<{
   methodNotAllowed: NewableFunction
 }>
 
-const injectedMiddlewareRouterSymbol = Symbol("injected-router")
+const injectedMiddlewareRouterSymbol = Symbol('injected-router')
 
 /** @internal */
 function getInjectedRouter<C extends {}>(middleware: Middleware<C>): Router<C> | null {
@@ -97,25 +97,25 @@ export class Router<Context extends {}> implements IHttpServerComponent.MethodHa
   constructor(opts?: RouterOptions) {
     this.opts = opts || {}
     this.methods = this.opts?.methods?.map(($) => $.toUpperCase()) || [
-      "HEAD",
-      "OPTIONS",
-      "GET",
-      "PUT",
-      "PATCH",
-      "POST",
-      "DELETE",
+      'HEAD',
+      'OPTIONS',
+      'GET',
+      'PUT',
+      'PATCH',
+      'POST',
+      'DELETE'
     ]
   }
 
-  connect = createMethodHandler<Context>(this, "CONNECT")
-  delete = createMethodHandler<Context>(this, "DELETE")
-  get = createMethodHandler<Context>(this, "GET")
-  head = createMethodHandler<Context>(this, "HEAD")
-  options = createMethodHandler<Context>(this, "OPTIONS")
-  patch = createMethodHandler<Context>(this, "PATCH")
-  post = createMethodHandler<Context>(this, "POST")
-  put = createMethodHandler<Context>(this, "PUT")
-  trace = createMethodHandler<Context>(this, "TRACE")
+  connect = createMethodHandler<Context>(this, 'CONNECT')
+  delete = createMethodHandler<Context>(this, 'DELETE')
+  get = createMethodHandler<Context>(this, 'GET')
+  head = createMethodHandler<Context>(this, 'HEAD')
+  options = createMethodHandler<Context>(this, 'OPTIONS')
+  patch = createMethodHandler<Context>(this, 'PATCH')
+  post = createMethodHandler<Context>(this, 'POST')
+  put = createMethodHandler<Context>(this, 'PUT')
+  trace = createMethodHandler<Context>(this, 'TRACE')
 
   /**
    * Use given middleware.
@@ -155,7 +155,7 @@ export class Router<Context extends {}> implements IHttpServerComponent.MethodHa
     let path: string | undefined
     let router = this
 
-    const hasPath = typeof middleware[0] === "string"
+    const hasPath = typeof middleware[0] === 'string'
     if (hasPath) path = middleware.shift() as any as string
 
     for (let i = 0; i < middleware.length; i++) {
@@ -163,7 +163,7 @@ export class Router<Context extends {}> implements IHttpServerComponent.MethodHa
       const injectedRouter = getInjectedRouter(m)
       if (injectedRouter) {
         const cloneRouter = Object.assign(Object.create(Router.prototype), injectedRouter, {
-          stack: injectedRouter.stack.slice(0),
+          stack: injectedRouter.stack.slice(0)
         })
 
         for (let j = 0; j < cloneRouter.stack.length; j++) {
@@ -176,10 +176,9 @@ export class Router<Context extends {}> implements IHttpServerComponent.MethodHa
           cloneRouter.stack[j] = cloneLayer
         }
       } else {
-        const keys: Key[] = []
-        pathToRegexp(router.opts.prefix || "", keys)
+        const { keys } = pathToRegexp(router.opts.prefix || '')
         const routerPrefixHasParam = router.opts.prefix && keys.length
-        router.register(path || "([^/]*)", [], m, { end: false, ignoreCaptures: !hasPath && !routerPrefixHasParam })
+        router.register(path || '([^/]*)', [], m, { end: false, ignoreCaptures: !hasPath && !routerPrefixHasParam })
       }
     }
 
@@ -199,7 +198,7 @@ export class Router<Context extends {}> implements IHttpServerComponent.MethodHa
    */
 
   prefix(prefix: string): this {
-    prefix = prefix.replace(/\/$/, "")
+    prefix = prefix.replace(/\/$/, '')
 
     this.opts.prefix = prefix
 
@@ -240,20 +239,23 @@ export class Router<Context extends {}> implements IHttpServerComponent.MethodHa
           ctx._matchedRouteName = mostSpecificLayer.name
         }
 
-        layerChain = matchedLayers.reduce(function (memo, layer) {
-          memo.push(async function (ctx, next) {
-            ctx.captures = layer.captures(path)
-            ctx.params = ctx.params = layer.params(ctx.captures, ctx.params)
-            ctx.routerPath = layer.path
-            // ctx.routerName = layer.name || undefined
-            ctx._matchedRoute = layer.path
-            if (layer.name) {
-              ctx._matchedRouteName = layer.name
-            }
-            return await next()
-          })
-          return memo.concat(layer.stack)
-        }, [] as typeof layerChain)
+        layerChain = matchedLayers.reduce(
+          function (memo, layer) {
+            memo.push(async function (ctx, next) {
+              ctx.captures = layer.captures(path)
+              ctx.params = ctx.params = layer.params(ctx.captures, ctx.params)
+              ctx.routerPath = layer.path
+              // ctx.routerName = layer.name || undefined
+              ctx._matchedRoute = layer.path
+              if (layer.name) {
+                ctx._matchedRouteName = layer.name
+              }
+              return await next()
+            })
+            return memo.concat(layer.stack)
+          },
+          [] as typeof layerChain
+        )
 
         return compose(...layerChain)(ctx, next)
       }
@@ -308,7 +310,7 @@ export class Router<Context extends {}> implements IHttpServerComponent.MethodHa
         const allowed: Partial<Record<string, string>> = {}
 
         if (!response.status || response.status === 404) {
-          if ("matched" in ctx && ctx.matched) {
+          if ('matched' in ctx && ctx.matched) {
             for (let i = 0; i < ctx.matched.length; i++) {
               const route: any = ctx.matched[i]
               for (let j = 0; j < route.methods.length; j++) {
@@ -324,7 +326,7 @@ export class Router<Context extends {}> implements IHttpServerComponent.MethodHa
           if (!~implemented.indexOf(currentMethod)) {
             if (options.throw) {
               let notImplementedThrowable =
-                typeof options.notImplemented === "function"
+                typeof options.notImplemented === 'function'
                   ? options.notImplemented() // set whatever the user returns from their function
                   : new HttpError.NotImplemented()
 
@@ -332,19 +334,19 @@ export class Router<Context extends {}> implements IHttpServerComponent.MethodHa
             } else {
               return {
                 status: 501,
-                headers: { Allow: allowedArr.join(", ") },
+                headers: { Allow: allowedArr.join(', ') }
               }
             }
           } else if (allowedArr.length) {
-            if (currentMethod === "OPTIONS") {
+            if (currentMethod === 'OPTIONS') {
               return {
                 status: 200,
-                headers: { Allow: allowedArr.join(", ") },
+                headers: { Allow: allowedArr.join(', ') }
               }
             } else if (!allowed[currentMethod]) {
               if (options.throw) {
                 let notAllowedThrowable =
-                  typeof options.methodNotAllowed === "function"
+                  typeof options.methodNotAllowed === 'function'
                     ? options.methodNotAllowed() // set whatever the user returns from their function
                     : new HttpError.MethodNotAllowed()
 
@@ -352,7 +354,7 @@ export class Router<Context extends {}> implements IHttpServerComponent.MethodHa
               } else {
                 return {
                   status: 405,
-                  headers: { Allow: allowedArr.join(", ") },
+                  headers: { Allow: allowedArr.join(', ') }
                 }
               }
             }
@@ -403,10 +405,10 @@ export class Router<Context extends {}> implements IHttpServerComponent.MethodHa
 
   redirect(source: string, destination: string, code: number = 301): this {
     // lookup source route by name
-    if (source[0] !== "/") throw new Error(`Relative URL must start with / got ${JSON.stringify(source)} instead`)
+    if (source[0] !== '/') throw new Error(`Relative URL must start with / got ${JSON.stringify(source)} instead`)
 
     // lookup destination route by name
-    if (destination[0] !== "/" && !destination.includes("://"))
+    if (destination[0] !== '/' && !destination.includes('://'))
       throw new Error(
         `Can't resolve target URL, it is neither a relative or absolute URL. Got ${JSON.stringify(source)}`
       )
@@ -449,8 +451,8 @@ export class Router<Context extends {}> implements IHttpServerComponent.MethodHa
       name: opts.name,
       sensitive: opts.sensitive || this.opts.sensitive || false,
       strict: opts.strict || this.opts.strict || false,
-      prefix: opts.prefix || this.opts.prefix || "",
-      ignoreCaptures: opts.ignoreCaptures,
+      prefix: opts.prefix || this.opts.prefix || '',
+      ignoreCaptures: opts.ignoreCaptures
     })
 
     if (this.opts.prefix) {
@@ -478,7 +480,7 @@ export class Router<Context extends {}> implements IHttpServerComponent.MethodHa
     const matched = {
       path: [] as Layer<Context, string>[],
       pathAndMethod: [] as Layer<Context, string>[],
-      route: false,
+      route: false
     }
 
     for (let len = layers.length, i = 0; i < len; i++) {
