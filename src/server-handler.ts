@@ -1,7 +1,7 @@
-import { contextFromRequest, defaultHandler, getDefaultMiddlewares, normalizeResponseBody } from "./logic"
-import { Middleware, compose } from "./middleware"
-import * as fetch from "node-fetch"
-import { IHttpServerComponent as http } from "@well-known-components/interfaces"
+import { contextFromRequest, defaultHandler, getDefaultMiddlewares, normalizeResponseBody } from './logic'
+import { Middleware, compose } from './middleware'
+import * as fetch from 'node-fetch'
+import { IHttpServerComponent as http } from '@well-known-components/interfaces'
 
 // @internal
 export function createServerHandler<Context extends object>() {
@@ -20,7 +20,7 @@ export function createServerHandler<Context extends object>() {
   // initialize default middleware
   resetMiddlewares()
 
-  const use: http<Context>["use"] = async (handler) => {
+  const use: http<Context>['use'] = async (handler) => {
     middlewares.push(handler)
     doMiddlewareComposition()
   }
@@ -34,6 +34,6 @@ export function createServerHandler<Context extends object>() {
   return {
     resetMiddlewares,
     use,
-    processRequest,
+    processRequest
   }
 }

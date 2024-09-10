@@ -1,5 +1,5 @@
-import { createRunner } from "@well-known-components/test-helpers"
-import { initTestServerComponents, TestServerComponents, wireTestServerComponents } from "../src/test-server"
+import { createRunner } from '@well-known-components/test-helpers'
+import { initTestServerComponents, TestServerComponents, wireTestServerComponents } from '../src/test-server'
 
 export const testWithServer = createRunner<TestServerComponents<any>>({
   async main(program) {

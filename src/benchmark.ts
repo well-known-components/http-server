@@ -1,10 +1,10 @@
 // this server shuts down after 10100 requests.
 
-import { IConfigComponent, IHttpServerComponent, ILoggerComponent, Lifecycle } from "@well-known-components/interfaces"
-import { createConfigComponent } from "@well-known-components/env-config-provider"
-import { createServerComponent } from "./index"
-import { createLogComponent } from "@well-known-components/logger"
-import { readFileSync } from "fs"
+import { IConfigComponent, IHttpServerComponent, ILoggerComponent, Lifecycle } from '@well-known-components/interfaces'
+import { createConfigComponent } from '@well-known-components/env-config-provider'
+import { createServerComponent } from './index'
+import { createLogComponent } from '@well-known-components/logger'
+import { readFileSync } from 'fs'
 
 // Record of components
 type Components = {
@@ -44,7 +44,7 @@ async function main({ components, startComponents, stop }: Lifecycle.EntryPointP
 
   const staticBuffer = Buffer.from(new Array(10000).fill(0).map(() => Math.floor(Math.random() * 256)))
   const staticArrayBuffer = new Uint8Array(staticBuffer)
-  const packageJsonString = readFileSync("package.json").toString()
+  const packageJsonString = readFileSync('package.json').toString()
   const packageJson = JSON.parse(packageJsonString)
 
   const TOTAL_REQUESTS = 10100
@@ -65,25 +65,25 @@ async function main({ components, startComponents, stop }: Lifecycle.EntryPointP
         return {
           headers,
           status: 200,
-          body: staticBuffer,
+          body: staticBuffer
         }
       case 2:
         return {
           headers,
           status: 200,
-          body: staticArrayBuffer,
+          body: staticArrayBuffer
         }
       case 3:
         return {
           headers,
           status: 200,
-          body: packageJsonString,
+          body: packageJsonString
         }
       case 4:
         return {
           headers,
           status: 200,
-          body: packageJson,
+          body: packageJson
         }
     }
 
@@ -93,8 +93,8 @@ async function main({ components, startComponents, stop }: Lifecycle.EntryPointP
       status: 200,
       body: {
         json: true,
-        text: "Hello world",
-      },
+        text: 'Hello world'
+      }
     }
   })
 
@@ -108,8 +108,8 @@ async function initComponents(): Promise<Components> {
   const logs = await createLogComponent({})
 
   const config = createConfigComponent({
-    HTTP_SERVER_PORT: "5000",
-    HTTP_SERVER_HOST: "0.0.0.0",
+    HTTP_SERVER_PORT: '5000',
+    HTTP_SERVER_HOST: '0.0.0.0'
   })
 
   const server = await createServerComponent<AppContext>({ logs, config }, {})
@@ -117,6 +117,6 @@ async function initComponents(): Promise<Components> {
   return /*components*/ {
     logs,
     config,
-    server,
+    server
   }
 }

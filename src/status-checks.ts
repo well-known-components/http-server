@@ -2,15 +2,15 @@ import {
   IBaseComponent,
   IConfigComponent,
   IHttpServerComponent,
-  IStatusCheckCapableComponent,
-} from "@well-known-components/interfaces"
-import { Router } from "./router"
+  IStatusCheckCapableComponent
+} from '@well-known-components/interfaces'
+import { Router } from './router'
 
 /**
  * @beta
  */
 export type StandardStatusResponse = {
-  status: "pass" | "fail" | "warn"
+  status: 'pass' | 'fail' | 'warn'
   version?: string
   releaseId?: string
   notes?: string[]
@@ -24,7 +24,7 @@ export type StandardStatusResponse = {
  * @beta
  */
 export type StandardStatusResponseDetail = {
-  status: "pass" | "fail" | "warn"
+  status: 'pass' | 'fail' | 'warn'
   componentType?: string
   componentId?: string
 }
@@ -48,7 +48,7 @@ export async function createStatusCheckComponent<Context extends object = {}>(co
 
   const SUCCESSFUL_STATUS = 200
   const FAILED_STATUS = 503
-  const MIME = "application/health+json; charset=utf-8"
+  const MIME = 'application/health+json; charset=utf-8'
 
   async function getDetails(startup: boolean): Promise<StandardStatusResponse | null> {
     if (!mutStartOptions) {
@@ -58,17 +58,17 @@ export async function createStatusCheckComponent<Context extends object = {}>(co
 
     const probes: { name: string; promise: Promise<boolean> }[] = []
 
-    let functionName: "startupProbe" | "readynessProbe" = startup ? "startupProbe" : "readynessProbe"
+    let functionName: 'startupProbe' | 'readynessProbe' = startup ? 'startupProbe' : 'readynessProbe'
 
     for (let c in components) {
-      if (typeof components[c][functionName] == "function") {
+      if (typeof components[c][functionName] == 'function') {
         probes.push({
           name: c,
           promise: new Promise((ok) => {
             components[c][functionName]!()
               .then(ok)
               .catch(() => ok(false))
-          }),
+          })
         })
       }
     }
@@ -77,12 +77,12 @@ export async function createStatusCheckComponent<Context extends object = {}>(co
 
     const content: StandardStatusResponse = {
       details: {},
-      status: results.some(($) => $ === false) ? "fail" : "pass",
+      status: results.some(($) => $ === false) ? 'fail' : 'pass'
     }
 
     for (let it of probes) {
       content.details[it.name] = {
-        status: (await it.promise) ? "pass" : "fail",
+        status: (await it.promise) ? 'pass' : 'fail'
       }
     }
 
@@ -98,41 +98,41 @@ export async function createStatusCheckComponent<Context extends object = {}>(co
    * associated service's "pool" of pods that are handling requests,
    * by marking the pod as "Unready".
    */
-  routes.get("/health/ready", async () => {
+  routes.get('/health/ready', async () => {
     if (!mutStartOptions) {
       return {
-        body: { status: "initializing" },
+        body: { status: 'initializing' },
         status: FAILED_STATUS,
         headers: {
-          "content-type": MIME,
-        },
+          'content-type': MIME
+        }
       }
     }
     if (mutStartOptions.started()) {
       const content: StandardStatusResponse = (await getDetails(false))!
 
       return {
-        status: content.status == "pass" ? SUCCESSFUL_STATUS : FAILED_STATUS,
+        status: content.status == 'pass' ? SUCCESSFUL_STATUS : FAILED_STATUS,
         body: content,
         headers: {
-          "content-type": MIME,
-        },
+          'content-type': MIME
+        }
       }
     } else if (mutStartOptions.live()) {
       return {
-        body: "unready",
+        body: 'unready',
         status: FAILED_STATUS,
         headers: {
-          "content-type": MIME,
-        },
+          'content-type': MIME
+        }
       }
     }
     return {
-      body: "waiting",
+      body: 'waiting',
       status: FAILED_STATUS,
       headers: {
-        "content-type": MIME,
-      },
+        'content-type': MIME
+      }
     }
   })
 
@@ -146,37 +146,37 @@ export async function createStatusCheckComponent<Context extends object = {}>(co
    * process has finished, you can switch to returning a success
    * res (200) for the startup probe.
    */
-  routes.get("/health/startup", async () => {
+  routes.get('/health/startup', async () => {
     if (!mutStartOptions) {
       return {
         body: {
-          status: "bootstrapping",
+          status: 'bootstrapping'
         },
         headers: {
-          "content-type": MIME,
+          'content-type': MIME
         },
-        status: FAILED_STATUS,
+        status: FAILED_STATUS
       }
     } else if (!mutStartOptions.started()) {
       return {
         body: {
-          status: "starting",
+          status: 'starting'
         },
         headers: {
-          "content-type": MIME,
+          'content-type': MIME
         },
-        status: FAILED_STATUS,
+        status: FAILED_STATUS
       }
     }
 
     const content: StandardStatusResponse = (await getDetails(true))!
 
     return {
-      status: content.status == "pass" ? SUCCESSFUL_STATUS : FAILED_STATUS,
+      status: content.status == 'pass' ? SUCCESSFUL_STATUS : FAILED_STATUS,
       body: content,
       headers: {
-        "content-type": MIME,
-      },
+        'content-type': MIME
+      }
     }
   })
 
@@ -185,8 +185,8 @@ export async function createStatusCheckComponent<Context extends object = {}>(co
    * the container is alive or not. If a container fails its liveness
    * probe, Kubernetes will kill the pod and restart another.
    */
-  routes.get("/health/live", async () => {
-    return { status: SUCCESSFUL_STATUS, body: "alive" }
+  routes.get('/health/live', async () => {
+    return { status: SUCCESSFUL_STATUS, body: 'alive' }
   })
 
   const middleware = routes.middleware()
@@ -195,6 +195,6 @@ export async function createStatusCheckComponent<Context extends object = {}>(co
   return {
     async start(opt) {
       mutStartOptions = opt
-    },
+    }
   }
 }

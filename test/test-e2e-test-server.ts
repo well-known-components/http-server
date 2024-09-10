@@ -1,16 +1,16 @@
-import { createConfigComponent } from "@well-known-components/env-config-provider"
-import { createLogComponent } from "@well-known-components/logger"
-import { createRunner } from "@well-known-components/test-helpers"
-import { createTestServerComponent, IWebSocketComponent } from "../src"
-import { TestComponents } from "./test-helpers"
-import wsLib from "ws"
+import { createConfigComponent } from '@well-known-components/env-config-provider'
+import { createLogComponent } from '@well-known-components/logger'
+import { createRunner } from '@well-known-components/test-helpers'
+import { createTestServerComponent, IWebSocketComponent } from '../src'
+import { TestComponents } from './test-helpers'
+import wsLib from 'ws'
 
 // creates a "mocha-like" describe function to run tests using the test components
 export const describeTestE2E = createRunner<TestComponents>({
   async main(program) {
     await program.startComponents()
   },
-  initComponents,
+  initComponents
 })
 
 async function initComponents<C extends object>(): Promise<TestComponents> {
@@ -24,8 +24,8 @@ async function initComponents<C extends object>(): Promise<TestComponents> {
 
   const ws: IWebSocketComponent<wsLib.WebSocket> = {
     createWebSocket(url: string, protocols?: string | string[]) {
-      throw new Error("Not implemented")
-    },
+      throw new Error('Not implemented')
+    }
   }
 
   return { logs, config, server, fetch, ws }

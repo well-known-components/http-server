@@ -1,8 +1,8 @@
-import type { IConfigComponent, ILoggerComponent } from "@well-known-components/interfaces"
-import type * as http from "http"
-import type * as https from "https"
-import type { Socket } from "net"
-import { CorsOptions } from "./cors"
+import type { IConfigComponent, ILoggerComponent } from '@well-known-components/interfaces'
+import type * as http from 'http'
+import type * as https from 'https'
+import type { Socket } from 'net'
+import { CorsOptions } from './cors'
 
 /**
  * @alpha
@@ -13,7 +13,7 @@ export interface WebSocketServer {
     request: http.IncomingMessage,
     socket: Socket,
     upgradeHead: Buffer,
-    callback: (client: any, request: http.IncomingMessage) => void,
+    callback: (client: any, request: http.IncomingMessage) => void
   ): void
 }
 

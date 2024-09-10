@@ -1,6 +1,6 @@
-import { IHttpServerComponent } from "@well-known-components/interfaces"
+import { IHttpServerComponent } from '@well-known-components/interfaces'
 
-const wsSymbol = Symbol("WebSocketResponse")
+const wsSymbol = Symbol('WebSocketResponse')
 
 export type WebSocketCallback = (ws: WebSocket) => Promise<void> | void
 
@@ -11,7 +11,7 @@ export type WebSocketCallback = (ws: WebSocket) => Promise<void> | void
 export function upgradeWebSocketResponse(cb: WebSocketCallback): IHttpServerComponent.IResponse {
   return withWebSocketCallback(
     {
-      status: 101,
+      status: 101
     },
     cb
   )
