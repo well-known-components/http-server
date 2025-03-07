@@ -43,6 +43,17 @@ export type ApiDefinitionEntry = {
     metadata: Array<[string, any]>;
 };
 
+// @public (undocumented)
+export type AsyncRequestHandlersOf<T extends object> = {
+    [K in keyof T]: T[K] extends (...args: any[]) => HandlerReturnType ? K : never;
+}[keyof T];
+
+// @public (undocumented)
+export type AsyncResourceDecorator<Base extends Resource = Resource> = <T extends Base, K extends AsyncRequestHandlersOf<T>, V>(classPrototype: T, propertyKey: K, descriptor?: TypedPropertyDescriptor<V>) => void;
+
+// @public (undocumented)
+export type AsyncResourceParameterDecorator = <Base extends Resource, K extends AsyncRequestHandlersOf<Base>>(target: Base, propertyKey: K, parameterIndex: number) => void;
+
 // @public
 export function createServerComponent<Context extends object>(components: ServerComponents, options: Partial<IHttpServerOptions>): Promise<FullHttpServerComponent<Context>>;
 
@@ -54,6 +65,12 @@ export function createStatusCheckComponent<Context extends object = {}>(componen
 
 // @public
 export function createTestServerComponent<Context extends object = {}>(): ITestHttpServerComponent<Context>;
+
+// @public (undocumented)
+export function defineParamExtractor(target: any, method: any, paramIndex: number, extractor: Extractor<IHttpServerComponent.DefaultContext>): void;
+
+// @public (undocumented)
+export type Extractor<Context = any> = (context: Context) => Promise<any>;
 
 // @public (undocumented)
 export type FullHttpServerComponent<Context extends object> = IHttpServerComponent<Context> & IBaseComponent & IStatusCheckCapableComponent & {
@@ -106,8 +123,6 @@ export abstract class Resource {
     };
     // (undocumented)
     static getApiDefinition(res: Resource): ApiDefinition;
-    // Warning: (ae-forgotten-export) The symbol "AsyncResourceDecorator" needs to be exported by the entry point index.d.ts
-    //
     // (undocumented)
     static Handler: (method: IHttpServerComponent.HTTPMethod, route: string) => AsyncResourceDecorator;
     static Prefix: (prefix: string) => ClassDecorator_2;
@@ -116,11 +131,9 @@ export abstract class Resource {
         api: ApiDefinition;
     };
     // (undocumented)
-    static RequestContext: ParameterDecorator_2;
-    // Warning: (ae-forgotten-export) The symbol "ParameterDecorator_2" needs to be exported by the entry point index.d.ts
-    //
+    static RequestContext: AsyncResourceParameterDecorator;
     // (undocumented)
-    static UrlParam: (param: string) => ParameterDecorator_2;
+    static UrlParam: (param: string) => AsyncResourceParameterDecorator;
     // Warning: (ae-forgotten-export) The symbol "Middleware" needs to be exported by the entry point index.d.ts
     // Warning: (ae-forgotten-export) The symbol "ClassDecorator_2" needs to be exported by the entry point index.d.ts
     static WithMiddleware: (middlware: Middleware<any>) => ClassDecorator_2 & AsyncResourceDecorator;
@@ -228,7 +241,7 @@ export interface WebSocketServer {
 
 // Warnings were encountered during analysis:
 //
-// dist/Resource.d.ts:30:5 - (ae-forgotten-export) The symbol "HandlerReturnType" needs to be exported by the entry point index.d.ts
+// dist/Resource.d.ts:47:5 - (ae-forgotten-export) The symbol "HandlerReturnType" needs to be exported by the entry point index.d.ts
 // dist/router.d.ts:20:5 - (ae-forgotten-export) The symbol "Layer" needs to be exported by the entry point index.d.ts
 // dist/types.d.ts:19:5 - (ae-incompatible-release-tags) The symbol "ws" is marked as @public, but its signature references "WebSocketServer" which is marked as @alpha
 // dist/types.d.ts:25:5 - (ae-forgotten-export) The symbol "CorsOptions" needs to be exported by the entry point index.d.ts
