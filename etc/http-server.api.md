@@ -13,7 +13,7 @@ import { IHttpServerComponent } from '@well-known-components/interfaces';
 import type { ILoggerComponent } from '@well-known-components/interfaces';
 import { IMetricsComponent } from '@well-known-components/interfaces';
 import { IMiddlewareAdapterHandler } from '@well-known-components/interfaces';
-import type { IStatusCheckCapableComponent } from '@well-known-components/interfaces';
+import { IStatusCheckCapableComponent } from '@well-known-components/interfaces';
 import { Key } from 'path-to-regexp';
 import type { Socket } from 'net';
 
