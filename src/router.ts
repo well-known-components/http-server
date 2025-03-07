@@ -1,7 +1,7 @@
 import HttpError from 'http-errors'
 import { Layer, LayerOptions } from './layer'
 import { Key, pathToRegexp } from 'path-to-regexp'
-import type { IHttpServerComponent, IMiddlewareAdapterHandler } from '@well-known-components/interfaces'
+import type { IHttpServerComponent } from '@well-known-components/interfaces'
 import { compose, Middleware } from './middleware'
 import { methodsList } from './methods'
 
@@ -32,7 +32,7 @@ function getInjectedRouter<C extends {}>(middleware: Middleware<C>): Router<C> |
 
 /** @internal */
 function setInjectedRouter<C>(middleware: Middleware<C>, router: Router<any>) {
-  ;(middleware as any)[injectedMiddlewareRouterSymbol] = router
+  ; (middleware as any)[injectedMiddlewareRouterSymbol] = router
 }
 
 /** @public */
@@ -62,7 +62,7 @@ function createMethodHandler<Context extends {}>(
   router: Router<Context>,
   method: IHttpServerComponent.HTTPMethod
 ): RoutePathSignature<Context> {
-  return function (path, ...middlewares) {
+  return function(path, ...middlewares) {
     router.register(path, [method], compose(...middlewares) as IHttpServerComponent.IRequestHandler<Context>, {})
     return router
   }
@@ -241,8 +241,8 @@ export class Router<Context extends {}> implements IHttpServerComponent.MethodHa
         }
 
         layerChain = matchedLayers.reduce(
-          function (memo, layer) {
-            memo.push(async function (ctx, next) {
+          function(memo, layer) {
+            memo.push(async function(ctx, next) {
               ctx.captures = layer.captures(path)
               ctx.params = ctx.params = layer.params(ctx.captures, ctx.params)
               ctx.routerPath = layer.path

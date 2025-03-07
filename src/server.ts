@@ -1,7 +1,9 @@
-import type {
-  IBaseComponent,
-  IHttpServerComponent,
-  IStatusCheckCapableComponent
+import {
+  START_COMPONENT,
+  STOP_COMPONENT,
+  type IBaseComponent,
+  type IHttpServerComponent,
+  type IStatusCheckCapableComponent
 } from '@well-known-components/interfaces'
 import { _setUnderlyingServer } from './injectors'
 import { getServer, success, getRequestFromNodeMessage } from './logic'
@@ -93,6 +95,8 @@ export async function createServerComponent<Context extends object>(
     // IBaseComponent
     start,
     stop,
+    [START_COMPONENT]: start,
+    [STOP_COMPONENT]: stop,
     // IStatusCheckCapableComponent
     async startupProbe() {
       return true

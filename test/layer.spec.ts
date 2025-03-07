@@ -2,27 +2,27 @@ import { createTestServerComponent } from '../src'
 import { Layer } from '../src/layer'
 import { Router } from '../src/router'
 
-describe('Layer', function () {
-  it('composes multiple callbacks/middlware', async function () {
+describe('Layer', function() {
+  it('composes multiple callbacks/middlware', async function() {
     const app = createTestServerComponent()
     const router = new Router()
     app.use(router.middleware())
-    router.get('/:category/:title', async function (ctx, next) {
+    router.get('/:category/:title', async function(ctx, next) {
       return { status: 500, ...(await next()) }
     })
-    app.use(async function (ctx, next) {
+    app.use(async function(ctx, next) {
       return { status: 204 }
     })
     const res = await app.fetch('/programming/how-to-node')
     expect(res.status).toEqual(204)
   })
 
-  describe('Layer#match()', function () {
-    it('captures URL path parameters', async function () {
+  describe('Layer#match()', function() {
+    it('captures URL path parameters', async function() {
       const app = createTestServerComponent()
       const router = new Router()
       app.use(router.middleware())
-      router.get('/:category/:title', async function (ctx) {
+      router.get('/:category/:title', async function(ctx) {
         expect(ctx).toHaveProperty('params')
         expect(ctx.params).toHaveProperty('category', 'match')
         expect(ctx.params).toHaveProperty('title', 'this')
@@ -32,11 +32,11 @@ describe('Layer', function () {
       expect(res.status).toEqual(204)
     })
 
-    it('return original path parameters when decodeURIComponent throw error', async function () {
+    it('return original path parameters when decodeURIComponent throw error', async function() {
       const app = createTestServerComponent()
       const router = new Router()
       app.use(router.middleware())
-      router.get('/:category/:title', async function (ctx) {
+      router.get('/:category/:title', async function(ctx) {
         expect(ctx).toHaveProperty('params')
         expect(ctx.params).toHaveProperty('category', '100%')
         expect(ctx.params).toHaveProperty('title', '101%')
@@ -46,26 +46,26 @@ describe('Layer', function () {
       expect(res.status).toEqual(204)
     })
 
-    it('should throw friendly error message when handle not exists', function () {
+    it('should throw friendly error message when handle not exists', function() {
       const app = createTestServerComponent()
       const router = new Router()
       app.use(router.middleware())
       const notexistHandle: any = undefined
-      expect(function () {
+      expect(function() {
         router.get('/foo', notexistHandle)
       }).toThrow('Middleware must be composed of functions!')
     })
   })
 
-  describe('Layer#param()', function () {
-    it('composes middleware for param fn', async function () {
+  describe('Layer#param()', function() {
+    it('composes middleware for param fn', async function() {
       const app = createTestServerComponent()
       const router = new Router()
       const route = new Layer(
         '/users/:user',
         ['GET'],
         [
-          async function (ctx) {
+          async function(ctx) {
             return { body: ctx.params }
           }
         ]
@@ -78,12 +78,12 @@ describe('Layer', function () {
       expect(await res.json()).toHaveProperty('user', '3')
     })
 
-    it('param with paramNames positive check', function () {
+    it('param with paramNames positive check', function() {
       const route = new Layer(
         '/:category/:title',
         ['GET'],
         [
-          async function (_, next) {
+          async function(_, next) {
             return next()
           }
         ],
@@ -100,13 +100,13 @@ describe('Layer', function () {
     })
   })
 
-  describe('Layer#url()', function () {
-    it('setPrefix method checks Layer for path', function () {
+  describe('Layer#url()', function() {
+    it('setPrefix method checks Layer for path', function() {
       const route = new Layer(
         '/category',
         ['GET'],
         [
-          async function (_, next) {
+          async function(_, next) {
             return next()
           }
         ],
@@ -119,12 +119,12 @@ describe('Layer', function () {
   })
 
   describe('Layer#prefix', () => {
-    it('setPrefix method passes check Layer for path', function () {
+    it('setPrefix method passes check Layer for path', function() {
       const route = new Layer(
         '/category',
         ['GET'],
         [
-          async function (_, next) {
+          async function(_, next) {
             return next()
           }
         ],
@@ -135,16 +135,16 @@ describe('Layer', function () {
       expect(prefix.path).toEqual('/TEST/hunter2')
     })
 
-    it('setPrefix method fails check Layer for path', function () {
+    it('setPrefix method fails check Layer for path', function() {
       const route = new Layer(
-        false as any,
-        ['GET'],
-        [
-          async function (_, next) {
-            return next()
-          }
-        ],
-        { name: 'books' }
+          false as any,
+          ['GET'],
+          [
+            async function(_, next) {
+              return next()
+            }
+          ],
+          { name: 'books' }
       )
       ;(route as any).path = false
       const prefix = route.setPrefix('/TEST')
