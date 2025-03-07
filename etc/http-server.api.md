@@ -24,6 +24,25 @@ export type AllowedMethodOptions = Partial<{
     methodNotAllowed: NewableFunction;
 }>;
 
+// @public (undocumented)
+export type ApiDefinition = {
+    prefix: string;
+    instance: Resource;
+    middlewares: any[];
+    resources: ApiDefinitionEntry[];
+    metadata: Array<[string, any]>;
+};
+
+// @public (undocumented)
+export type ApiDefinitionEntry = {
+    httpMethod: string;
+    httpRoute: string;
+    handlerName: string | symbol | number;
+    middlewares: any[];
+    delegate(context: any): HandlerReturnType;
+    metadata: Array<[string, any]>;
+};
+
 // @public
 export function createServerComponent<Context extends object>(components: ServerComponents, options: Partial<IHttpServerOptions>): Promise<FullHttpServerComponent<Context>>;
 
@@ -78,6 +97,34 @@ export type ITestHttpServerComponent<Context extends object> = IHttpServerCompon
 export type IWebSocketComponent<W = WebSocket> = {
     createWebSocket(url: string, protocols?: string | string[]): W;
 };
+
+// @public (undocumented)
+export abstract class Resource {
+    createRouter(): {
+        router: Router<{}>;
+        api: ApiDefinition;
+    };
+    // (undocumented)
+    static getApiDefinition(res: Resource): ApiDefinition;
+    // Warning: (ae-forgotten-export) The symbol "AsyncResourceDecorator" needs to be exported by the entry point index.d.ts
+    //
+    // (undocumented)
+    static Handler: (method: IHttpServerComponent.HTTPMethod, route: string) => AsyncResourceDecorator;
+    static Prefix: (prefix: string) => ClassDecorator_2;
+    registerResource(globalRouter: Router<any>): {
+        router: Router<{}>;
+        api: ApiDefinition;
+    };
+    // (undocumented)
+    static RequestContext: ParameterDecorator_2;
+    // Warning: (ae-forgotten-export) The symbol "ParameterDecorator_2" needs to be exported by the entry point index.d.ts
+    //
+    // (undocumented)
+    static UrlParam: (param: string) => ParameterDecorator_2;
+    // Warning: (ae-forgotten-export) The symbol "Middleware" needs to be exported by the entry point index.d.ts
+    // Warning: (ae-forgotten-export) The symbol "ClassDecorator_2" needs to be exported by the entry point index.d.ts
+    static WithMiddleware: (middlware: Middleware<any>) => ClassDecorator_2 & AsyncResourceDecorator;
+}
 
 // @public (undocumented)
 export type RoutedContext<Context, Path extends string> = IHttpServerComponent.PathAwareContext<Context, Path> & {
@@ -181,6 +228,7 @@ export interface WebSocketServer {
 
 // Warnings were encountered during analysis:
 //
+// dist/Resource.d.ts:30:5 - (ae-forgotten-export) The symbol "HandlerReturnType" needs to be exported by the entry point index.d.ts
 // dist/router.d.ts:20:5 - (ae-forgotten-export) The symbol "Layer" needs to be exported by the entry point index.d.ts
 // dist/types.d.ts:19:5 - (ae-incompatible-release-tags) The symbol "ws" is marked as @public, but its signature references "WebSocketServer" which is marked as @alpha
 // dist/types.d.ts:25:5 - (ae-forgotten-export) The symbol "CorsOptions" needs to be exported by the entry point index.d.ts
