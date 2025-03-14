@@ -16,7 +16,7 @@ build:
 	./node_modules/.bin/api-extractor run $(LOCAL_ARG) --typescript-compiler-folder ./node_modules/typescript
 
 test:
-	./node_modules/.bin/jest --forceExit --detectOpenHandles --coverage --verbose $(TEST_FILE)
+	node --inspect ./node_modules/.bin/jest --forceExit --detectOpenHandles --coverage --verbose $(TEST_FILE)
 
 test-esm:
 	node --experimental-vm-modules ./node_modules/.bin/jest --forceExit --detectOpenHandles --coverage --verbose

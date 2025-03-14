@@ -67,7 +67,7 @@ export function createStatusCheckComponent<Context extends object = {}>(componen
 export function createTestServerComponent<Context extends object = {}>(): ITestHttpServerComponent<Context>;
 
 // @public (undocumented)
-export function defineParamExtractor(target: any, method: any, paramIndex: number, extractor: Extractor<IHttpServerComponent.DefaultContext>): void;
+export function defineParamExtractor(prototype: any, method: any, paramIndex: number, extractor: Extractor<IHttpServerComponent.DefaultContext>): void;
 
 // @public (undocumented)
 export type Extractor<Context = any> = (context: Context) => Promise<any>;

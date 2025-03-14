@@ -8,6 +8,7 @@ module.exports = {
   // preset: "ts-jest/presets/default-esm",
   preset: "ts-jest",
   coverageDirectory: "coverage",
+  coverageProvider: "v8",
   collectCoverageFrom: ["src/**/*.ts", "src/**/*.js", "!src/benchmark.ts",],
   testMatch: ["**/*.spec.(ts)"],
   testEnvironment: "node",
