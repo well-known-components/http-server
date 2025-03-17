@@ -44,7 +44,11 @@ export type Extractor<Context = any> = (context: Context) => Promise<any>
 
 type InternalMetadata = Record<string | symbol | number, any>
 
-function getOrCreateInternalMetadata(prototype: object, method: string | number | symbol): InternalMetadata {
+/**
+ * @public
+ * Helper to access the internal metadata of a method in a resource.
+ */
+export function getOrCreateInternalMetadata(prototype: object, method: string | number | symbol): InternalMetadata {
   const ret: InternalMetadata = Reflect.getMetadata(INTERNAL_METADATA, prototype) ?? {}
   Reflect.defineMetadata(INTERNAL_METADATA, ret, prototype)
   ret[method] = ret[method] ?? {}

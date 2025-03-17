@@ -80,6 +80,11 @@ export type FullHttpServerComponent<Context extends object> = IHttpServerCompone
 // @public (undocumented)
 export function getDefaultHttpMetrics(): IMetricsComponent.MetricsRecordDefinition<HttpMetrics>;
 
+// Warning: (ae-forgotten-export) The symbol "InternalMetadata" needs to be exported by the entry point index.d.ts
+//
+// @public
+export function getOrCreateInternalMetadata(prototype: object, method: string | number | symbol): InternalMetadata;
+
 // @public (undocumented)
 export function getUnderlyingServer<T>(server: IHttpServerComponent<any>): Promise<T>;
 
@@ -241,7 +246,7 @@ export interface WebSocketServer {
 
 // Warnings were encountered during analysis:
 //
-// dist/Resource.d.ts:47:5 - (ae-forgotten-export) The symbol "HandlerReturnType" needs to be exported by the entry point index.d.ts
+// dist/Resource.d.ts:53:5 - (ae-forgotten-export) The symbol "HandlerReturnType" needs to be exported by the entry point index.d.ts
 // dist/router.d.ts:20:5 - (ae-forgotten-export) The symbol "Layer" needs to be exported by the entry point index.d.ts
 // dist/types.d.ts:19:5 - (ae-incompatible-release-tags) The symbol "ws" is marked as @public, but its signature references "WebSocketServer" which is marked as @alpha
 // dist/types.d.ts:25:5 - (ae-forgotten-export) The symbol "CorsOptions" needs to be exported by the entry point index.d.ts
