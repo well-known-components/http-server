@@ -65,17 +65,13 @@ export async function createServerComponent<Context extends object>(
         reject(err)
       }
 
-      server.once('error', errorHandler).listen(port, host, () => {
-        // logger.log(`Listening ${host}:${port}`)
-        // resolve(server)
-        // server!.off("error", errorHandler)
-      })
-
       server.once('listening', () => {
-        logger.log(`Listening ${host}:${port}`)
+        logger.info(`Listening ${host}:${port}`)
         resolve(server)
         server!.off('error', errorHandler)
       })
+
+      server.once('error', errorHandler).listen(port, host, () => {})
     })
 
     await listen
