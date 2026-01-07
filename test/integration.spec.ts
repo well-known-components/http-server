@@ -593,32 +593,36 @@ function integrationSuite({ components }: { components: TestComponents }) {
       expect(res.status).toEqual(500)
     })
 
-    it('gracefully closes socket when an error occurs during piping', async () => {
-      const { fetch, server } = components
-      server.resetMiddlewares()
-
-      const routes = new Router()
-
-      routes.get('/stream-error', async (ctx) => {
-        function* streamContent() {
-          yield 'some data'
-          // simulate error while piping
-          throw new Error('Stream error during piping')
-        }
-
-        return {
-          status: 200,
-          body: Stream.Readable.from(streamContent(), { encoding: 'utf-8' })
-        }
-      })
-
-      server.use(routes.middleware())
-
-      {
-        const res = await fetch.fetch(`/stream-error`)
-        expect(res.status).toEqual(200)
-        await expect(res.text()).rejects.toThrow()
-      }
-    })
   })
 }
+
+describeE2E('stream error handling while piping', function ({ components }: { components: TestComponents }) {
+  it('gracefully ends response', async () => {
+    const { fetch, server } = components
+    server.resetMiddlewares()
+
+    const routes = new Router()
+
+    routes.get('/stream-error', async (ctx) => {
+      function* streamContent() {
+        yield 'some data'
+        // simulate error while piping
+        throw new Error('Stream error during piping')
+      }
+
+      return {
+        status: 200,
+        body: Stream.Readable.from(streamContent(), { encoding: 'utf-8' })
+      }
+    })
+
+    server.use(routes.middleware())
+
+    {
+      const res = await fetch.fetch(`/stream-error`)
+      expect(res.status).toEqual(200)
+      const text = await res.text()
+      expect(text).toEqual('some data')
+    }
+  })
+})

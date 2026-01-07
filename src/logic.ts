@@ -70,8 +70,8 @@ export function success(data: fetch.Response, res: http.ServerResponse) {
     // }
     throw new Error('Unknown response body (Blob)')
   } else if (body && body.pipe) {
-    body.on('error', (err) => {
-      res.destroy(err)
+    body.on('error', (_err) => {
+      res.end()
     })
     body.pipe(res)
 
