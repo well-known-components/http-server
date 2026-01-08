@@ -4,7 +4,7 @@ import * as http from 'http'
 import * as https from 'https'
 import destroy from 'destroy'
 import onFinished from 'on-finished'
-import type { IHttpServerComponent } from '@well-known-components/interfaces'
+import type { IHttpServerComponent, ILoggerComponent } from '@well-known-components/interfaces'
 import type { IHttpServerOptions } from './types'
 import { HttpError } from 'http-errors'
 import { Middleware } from './middleware'
@@ -43,7 +43,7 @@ export const isBlob = (object: any): object is Blob => {
 /**
  * @internal
  */
-export function success(data: fetch.Response, res: http.ServerResponse) {
+export function success(data: fetch.Response, res: http.ServerResponse, options: { logger: ILoggerComponent.ILogger }) {
   if (data.statusText) res.statusMessage = data.statusText
   if (data.status) res.statusCode = data.status
 
@@ -70,7 +70,8 @@ export function success(data: fetch.Response, res: http.ServerResponse) {
     // }
     throw new Error('Unknown response body (Blob)')
   } else if (body && body.pipe) {
-    body.on('error', (_err) => {
+    body.on('error', (err) => {
+      options.logger.error('Error piping response body', { error: err.message })
       res.end()
     })
     body.pipe(res)
