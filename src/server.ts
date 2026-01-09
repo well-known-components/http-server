@@ -113,8 +113,8 @@ export async function createServerComponent<Context extends object>(
   async function asyncHandle(req: http.IncomingMessage, res: http.ServerResponse) {
     const request = getRequestFromNodeMessage(req, host)
     const response = await serverHandler.processRequest(configuredContext, request)
-
-    success(response, res)
+    
+    success(response, res, { logger })
   }
 
   async function handleUpgrade(req: http.IncomingMessage, socket: Socket, head: Buffer) {

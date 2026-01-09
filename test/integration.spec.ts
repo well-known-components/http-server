@@ -12,7 +12,7 @@ import { multipartParserWrapper } from './busboy'
 describeE2E('integration sanity tests using http backend', integrationSuite)
 describeTestE2E('integration sanity tests using test server', integrationSuite)
 
-describeTestE2E('underlying server', function({ components }: { components: TestComponents }) {
+describeTestE2E('underlying server', function ({ components }: { components: TestComponents }) {
   it('gets the underlying http server', async () => {
     const { server } = components
     const http = getUnderlyingServer(server)
@@ -416,7 +416,7 @@ function integrationSuite({ components }: { components: TestComponents }) {
     const results = new Set<{ id: number }>()
     let i = 0
     server.use(async (ctx) => {
-      ; (ctx as any).id = i++
+      ;(ctx as any).id = i++
       results.add(ctx as any)
       return null as any
     })
@@ -592,5 +592,37 @@ function integrationSuite({ components }: { components: TestComponents }) {
       const res = await fetch.fetch(`/hola`)
       expect(res.status).toEqual(500)
     })
+
   })
 }
+
+describeE2E('stream error handling while piping', function ({ components }: { components: TestComponents }) {
+  it('gracefully ends response', async () => {
+    const { fetch, server } = components
+    server.resetMiddlewares()
+
+    const routes = new Router()
+
+    routes.get('/stream-error', async (ctx) => {
+      function* streamContent() {
+        yield 'some data'
+        // simulate error while piping
+        throw new Error('Stream error during piping')
+      }
+
+      return {
+        status: 200,
+        body: Stream.Readable.from(streamContent(), { encoding: 'utf-8' })
+      }
+    })
+
+    server.use(routes.middleware())
+
+    {
+      const res = await fetch.fetch(`/stream-error`)
+      expect(res.status).toEqual(200)
+      const text = await res.text()
+      expect(text).toEqual('some data')
+    }
+  })
+})
